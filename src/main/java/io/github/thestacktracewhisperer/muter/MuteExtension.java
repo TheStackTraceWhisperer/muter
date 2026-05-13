@@ -41,7 +41,9 @@ public class MuteExtension implements BeforeTestExecutionCallback, AfterTestExec
         }
 
         Class<?>[] classes = annotation.classes();
-        Map<Logger, Level> originalLevels = new HashMap<>(Math.max(2, classes.length * 2));
+        Map<Logger, Level> originalLevels = classes.length == 0
+                ? new HashMap<>(2)
+                : new HashMap<>(classes.length * 2);
 
         if (classes.length == 0) {
             Logger rootLogger = ctx.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
