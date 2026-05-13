@@ -2,35 +2,25 @@ package io.github.thestacktracewhisperer.muter;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-
 /**
- * Manages a per-root-context stack of {@link MuteRestorer} commands so that
- * nested and sequential tests each restore only their own mutations.
+ * Manages a per-test-context {@link MuteRestorer} command so that each test
+ * restores only its own mutations.
  */
 public class JUnitMuteStateStack {
 
     private static final ExtensionContext.Namespace NAMESPACE =
             ExtensionContext.Namespace.create(MuteExtension.class);
-    private static final String STACK_KEY = "muteRestorerStack";
+    private static final String RESTORER_KEY = "muteRestorer";
 
-    @SuppressWarnings("unchecked")
     public void push(ExtensionContext context, MuteRestorer restorer) {
-        Deque<MuteRestorer> stack = context.getRoot()
-                .getStore(NAMESPACE)
-                .getOrComputeIfAbsent(STACK_KEY, k -> new ArrayDeque<>(), Deque.class);
-        stack.push(restorer);
+        context.getStore(NAMESPACE).put(RESTORER_KEY, restorer);
     }
 
-    @SuppressWarnings("unchecked")
     public void popAndRestore(ExtensionContext context) {
-        Deque<MuteRestorer> stack = context.getRoot()
-                .getStore(NAMESPACE)
-                .get(STACK_KEY, Deque.class);
+        MuteRestorer restorer = context.getStore(NAMESPACE).remove(RESTORER_KEY, MuteRestorer.class);
 
-        if (stack != null && !stack.isEmpty()) {
-            stack.pop().restore();
+        if (restorer != null) {
+            restorer.restore();
         }
     }
 }
