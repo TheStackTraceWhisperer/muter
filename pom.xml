@@ -23,25 +23,30 @@
     </properties>
 
     <dependencies>
-        <!-- JUnit 5 API (provided at test compile time; also needed in main for the annotation) -->
+        <!-- JUnit 5 API — consumers provide their own version -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>${junit.version}</version>
+            <scope>provided</scope>
         </dependency>
 
-        <!-- SLF4J API -->
+        <!-- SLF4J API — consumers provide their own version -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
 
-        <!-- Logback Classic (provides Logback Logger/Level for LogbackMuter) -->
+        <!-- Logback Classic — consumers provide their own version -->
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
 
         <!-- JUnit 5 Engine (needed to actually run tests via Surefire) -->

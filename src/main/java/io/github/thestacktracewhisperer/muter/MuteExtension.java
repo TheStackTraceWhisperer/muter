@@ -1,26 +1,29 @@
 package io.github.thestacktracewhisperer.muter;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * JUnit 5 extension registered by {@link Mute}. Delegates muting to {@link LogMuter}
- * and state management to {@link JUnitMuteStateStack}.
+ * JUnit 5 extension registered by {@link Mute}. Mutes Logback loggers before
+ * test execution and restores their levels afterward.
  */
 public class MuteExtension implements BeforeTestExecutionCallback, AfterTestExecutionCallback {
 
-    private final LogMuter logMuter = new LogbackMuter();
     private final JUnitMuteStateStack stateStack = new JUnitMuteStateStack();
 
     @Override
     public void beforeTestExecution(ExtensionContext context) {
         context.getElement()
                .map(element -> element.getAnnotation(Mute.class))
-               .ifPresent(annotation -> {
-                   MuteRestorer restorer = logMuter.mute(annotation);
-                   stateStack.push(context, restorer);
-               });
+               .ifPresent(annotation -> stateStack.push(context, mute(annotation)));
     }
 
     @Override
@@ -28,5 +31,30 @@ public class MuteExtension implements BeforeTestExecutionCallback, AfterTestExec
         context.getElement()
                .map(element -> element.getAnnotation(Mute.class))
                .ifPresent(annotation -> stateStack.popAndRestore(context));
+    }
+
+    private MuteRestorer mute(Mute annotation) {
+        if (!(LoggerFactory.getILoggerFactory() instanceof LoggerContext ctx)) {
+            throw new IllegalStateException(
+                    "muter-logback requires Logback Classic on the classpath; found: "
+                            + LoggerFactory.getILoggerFactory().getClass().getName());
+        }
+
+        Class<?>[] classes = annotation.classes();
+        Map<Logger, Level> originalLevels = new HashMap<>(Math.max(2, classes.length * 2));
+
+        if (classes.length == 0) {
+            Logger rootLogger = ctx.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+            originalLevels.put(rootLogger, rootLogger.getLevel());
+            rootLogger.setLevel(Level.OFF);
+        } else {
+            for (Class<?> clazz : classes) {
+                Logger logger = ctx.getLogger(clazz.getName());
+                originalLevels.put(logger, logger.getLevel());
+                logger.setLevel(Level.OFF);
+            }
+        }
+
+        return () -> originalLevels.forEach(Logger::setLevel);
     }
 }
