@@ -14,12 +14,15 @@ public class LogbackMuter implements LogMuter {
 
     @Override
     public MuteRestorer mute(Mute annotation) {
-        Map<Logger, Level> originalLevels = new HashMap<>();
+        Class<?>[] classes = annotation.classes();
+        Map<Logger, Level> originalLevels = classes.length == 0
+                ? new HashMap<>(2)
+                : new HashMap<>(classes.length * 2);
 
-        if (annotation.classes().length == 0) {
+        if (classes.length == 0) {
             muteRoot(originalLevels);
         } else {
-            muteClasses(annotation.classes(), originalLevels);
+            muteClasses(classes, originalLevels);
         }
 
         return () -> originalLevels.forEach(Logger::setLevel);
