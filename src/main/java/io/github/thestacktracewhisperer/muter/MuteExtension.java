@@ -29,6 +29,10 @@ public class MuteExtension implements BeforeTestExecutionCallback, AfterTestExec
         this(LoggerFactory::getILoggerFactory);
     }
 
+    /**
+     * Testing seam that allows controlled logger-factory injection in unit tests.
+     * Production use should rely on {@link #MuteExtension()}.
+     */
     MuteExtension(Supplier<Object> loggerFactorySupplier) {
         this.loggerFactorySupplier = loggerFactorySupplier;
     }

@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * state and no {@code @Order} dependencies between tests.
  */
 class MuteExtensionTest {
+    private static final AnnotatedElement NO_ELEMENT = null;
 
     // ---------- Logger handles ----------
 
@@ -184,7 +185,7 @@ class MuteExtensionTest {
     @DisplayName("State stack restores once and no-ops when empty")
     void stateStackRestoresOnceAndNoopsWhenEmpty() {
         JUnitMuteStateStack stateStack = new JUnitMuteStateStack();
-        ExtensionContext context = contextFor(null, NoMuteFixture.class);
+        ExtensionContext context = contextFor(NO_ELEMENT, NoMuteFixture.class);
         AtomicInteger restores = new AtomicInteger();
 
         stateStack.push(context, restores::incrementAndGet);
