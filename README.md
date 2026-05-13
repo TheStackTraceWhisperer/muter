@@ -44,6 +44,6 @@ Original log levels are restored automatically after every test, regardless of p
 
 ## Requirements
 
-- Java 17+
+- Java 21+ (Java 21 is the minimum supported runtime and release level)
 - JUnit Jupiter 5.x
 - SLF4J 2.x + Logback Classic 1.5.x

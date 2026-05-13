@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -324,9 +325,9 @@ class MuteExtensionTest {
                 (proxy, method, args) -> switch (method.getName()) {
                     case "classes" -> classes;
                     case "annotationType" -> Mute.class;
-                    case "toString" -> "@Mute(classes=" + java.util.Arrays.toString(classes) + ")";
-                    case "hashCode" -> 31 * Mute.class.hashCode() + java.util.Arrays.hashCode(classes);
-                    case "equals" -> proxy == args[0];
+                    case "toString" -> "@Mute(classes=" + Arrays.toString(classes) + ")";
+                    case "hashCode" -> 31 * Mute.class.hashCode() + Arrays.hashCode(classes);
+                    case "equals" -> args[0] instanceof Mute other && Arrays.equals(classes, other.classes());
                     default -> method.getDefaultValue();
                 });
     }
