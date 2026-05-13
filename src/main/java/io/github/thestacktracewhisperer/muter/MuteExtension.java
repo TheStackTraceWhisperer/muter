@@ -10,10 +10,14 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * JUnit 5 extension registered by {@link Mute}. Mutes Logback loggers before
  * test execution and restores their levels afterward.
+ *
+ * <p>{@link Mute} may be placed on a test method <em>or</em> on a test class.
+ * When placed on a class the annotation is inherited by every test method in that class.
  */
 public class MuteExtension implements BeforeTestExecutionCallback, AfterTestExecutionCallback {
 
@@ -21,16 +25,24 @@ public class MuteExtension implements BeforeTestExecutionCallback, AfterTestExec
 
     @Override
     public void beforeTestExecution(ExtensionContext context) {
-        context.getElement()
-               .map(element -> element.getAnnotation(Mute.class))
-               .ifPresent(annotation -> stateStack.push(context, mute(annotation)));
+        findMuteAnnotation(context)
+                .ifPresent(annotation -> stateStack.push(context, mute(annotation)));
     }
 
     @Override
     public void afterTestExecution(ExtensionContext context) {
-        context.getElement()
-               .map(element -> element.getAnnotation(Mute.class))
-               .ifPresent(annotation -> stateStack.popAndRestore(context));
+        findMuteAnnotation(context)
+                .ifPresent(annotation -> stateStack.popAndRestore(context));
+    }
+
+    /**
+     * Looks for {@link Mute} on the test method first; falls back to the test class
+     * to support class-level {@code @Mute}.
+     */
+    private Optional<Mute> findMuteAnnotation(ExtensionContext context) {
+        return context.getElement()
+                .map(element -> element.getAnnotation(Mute.class))
+                .or(() -> Optional.ofNullable(context.getRequiredTestClass().getAnnotation(Mute.class)));
     }
 
     private MuteRestorer mute(Mute annotation) {
