@@ -3,13 +3,24 @@ package io.github.thestacktracewhisperer.muter;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Verifies {@link MuteExtension} end-to-end.
@@ -115,16 +126,126 @@ class MuteExtensionTest {
         assertEquals(Level.DEBUG, SERVICE_A.getLevel(), "ServiceA logger restored after nested @Mute");
     }
 
+    @Test
+    @DisplayName("Missing Logback binding fails fast with helpful error")
+    void missingLogbackBindingFailsFast() throws Exception {
+        MuteExtension extension = new MuteExtension() {
+            @Override
+            Object getLoggerFactory() {
+                return new Object();
+            }
+        };
+        Method method = RootMuteFixture.class.getDeclaredMethod("run");
+        ExtensionContext context = contextFor(method, RootMuteFixture.class);
+
+        IllegalStateException exception =
+                assertThrows(IllegalStateException.class, () -> extension.beforeTestExecution(context));
+        assertEquals(
+                "muter-logback requires Logback Classic on the classpath; found: java.lang.Object",
+                exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("Null logger factory fails fast with null type in error")
+    void nullLoggerFactoryFailsFast() throws Exception {
+        MuteExtension extension = new MuteExtension() {
+            @Override
+            Object getLoggerFactory() {
+                return null;
+            }
+        };
+        Method method = RootMuteFixture.class.getDeclaredMethod("run");
+        ExtensionContext context = contextFor(method, RootMuteFixture.class);
+
+        IllegalStateException exception =
+                assertThrows(IllegalStateException.class, () -> extension.beforeTestExecution(context));
+        assertEquals(
+                "muter-logback requires Logback Classic on the classpath; found: null",
+                exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("Context without @Mute annotation is ignored")
+    void contextWithoutMuteAnnotationIsIgnored() throws Exception {
+        MuteExtension extension = new MuteExtension();
+        Method method = NoMuteFixture.class.getDeclaredMethod("run");
+        ExtensionContext context = contextFor(method, NoMuteFixture.class);
+
+        assertDoesNotThrow(() -> extension.beforeTestExecution(context));
+        assertDoesNotThrow(() -> extension.afterTestExecution(context));
+    }
+
+    @Test
+    @DisplayName("Class-level @Mute is used when method lacks @Mute")
+    void classLevelMuteIsUsedWhenMethodLacksMute() throws Exception {
+        MuteExtension extension = new MuteExtension();
+        ROOT.setLevel(Level.INFO);
+        Method method = NoMuteFixture.class.getDeclaredMethod("run");
+        ExtensionContext context = contextFor(method, ClassLevelOnlyFixture.class);
+
+        extension.beforeTestExecution(context);
+        assertEquals(Level.OFF, ROOT.getLevel());
+        extension.afterTestExecution(context);
+        assertEquals(Level.INFO, ROOT.getLevel());
+    }
+
+    @Test
+    @DisplayName("State stack restores once and no-ops when empty")
+    void stateStackRestoresOnceAndNoopsWhenEmpty() {
+        JUnitMuteStateStack stateStack = new JUnitMuteStateStack();
+        ExtensionContext context = contextFor(null, NoMuteFixture.class);
+        AtomicInteger restores = new AtomicInteger();
+
+        stateStack.push(context, restores::incrementAndGet);
+        stateStack.popAndRestore(context);
+        stateStack.popAndRestore(context);
+
+        assertEquals(1, restores.get());
+    }
+
+    @Test
+    @DisplayName("Direct mute with empty classes mutes root and restores level")
+    void directMuteWithEmptyClassesMutesRootAndRestoresLevel() throws Exception {
+        ROOT.setLevel(Level.INFO);
+        MuteRestorer restorer = invokeMute(new MuteExtension(), muteAnnotation());
+
+        assertEquals(Level.OFF, ROOT.getLevel());
+        restorer.restore();
+        assertEquals(Level.INFO, ROOT.getLevel());
+    }
+
+    @Test
+    @DisplayName("Direct mute with classes mutes only selected loggers and restores")
+    void directMuteWithClassesMutesOnlySelectedLoggersAndRestores() throws Exception {
+        ROOT.setLevel(Level.INFO);
+        SERVICE_A.setLevel(Level.DEBUG);
+        SERVICE_B.setLevel(Level.ERROR);
+        MuteRestorer restorer = invokeMute(new MuteExtension(), muteAnnotation(ServiceA.class, ServiceB.class));
+
+        assertEquals(Level.INFO, ROOT.getLevel());
+        assertEquals(Level.OFF, SERVICE_A.getLevel());
+        assertEquals(Level.OFF, SERVICE_B.getLevel());
+        restorer.restore();
+        assertEquals(Level.INFO, ROOT.getLevel());
+        assertEquals(Level.DEBUG, SERVICE_A.getLevel());
+        assertEquals(Level.ERROR, SERVICE_B.getLevel());
+    }
+
     // ---------- Fixture classes ----------
 
     /** Method-level {@code @Mute} — mutes root logger. */
     static class RootMuteFixture {
-        @Test @Mute void run() {}
+        @Test @Mute void run() {
+            assertEquals(Level.OFF, ROOT.getLevel());
+        }
     }
 
     /** Method-level {@code @Mute} where the test body throws — restoration still expected. */
     static class RootMuteThrowsFixture {
-        @Test @Mute void run() { throw new RuntimeException("expected"); }
+        @Test @Mute void run() {
+            assertEquals(Level.OFF, ROOT.getLevel());
+            throw new RuntimeException("expected");
+        }
     }
 
     /**
@@ -133,17 +254,25 @@ class MuteExtensionTest {
      */
     @Mute
     static class ClassLevelRootMuteFixture {
-        @Test void run() {}
+        @Test void run() {
+            assertEquals(Level.OFF, ROOT.getLevel());
+        }
     }
 
     /** Method-level {@code @Mute} targeting a single specific logger. */
     static class SingleClassMuteFixture {
-        @Test @Mute(classes = ServiceA.class) void run() {}
+        @Test @Mute(classes = ServiceA.class) void run() {
+            assertEquals(Level.OFF, SERVICE_A.getLevel());
+            assertEquals(Level.INFO, ROOT.getLevel());
+        }
     }
 
     /** Method-level {@code @Mute} targeting two class loggers simultaneously. */
     static class MultipleClassMuteFixture {
-        @Test @Mute(classes = {ServiceA.class, ServiceB.class}) void run() {}
+        @Test @Mute(classes = {ServiceA.class, ServiceB.class}) void run() {
+            assertEquals(Level.OFF, SERVICE_A.getLevel());
+            assertEquals(Level.OFF, SERVICE_B.getLevel());
+        }
     }
 
     /**
@@ -151,7 +280,9 @@ class MuteExtensionTest {
      * the extension must restore it to {@code null} rather than some concrete level.
      */
     static class NullLevelMuteFixture {
-        @Test @Mute(classes = ServiceA.class) void run() {}
+        @Test @Mute(classes = ServiceA.class) void run() {
+            assertEquals(Level.OFF, SERVICE_A.getLevel());
+        }
     }
 
     /**
@@ -160,12 +291,26 @@ class MuteExtensionTest {
      * Both loggers must be independently restored after their respective tests.
      */
     static class NestedMuteFixture {
-        @Test @Mute void outer() {}
+        @Test @Mute void outer() {
+            assertEquals(Level.OFF, ROOT.getLevel());
+        }
 
         @Nested
         class Inner {
-            @Test @Mute(classes = ServiceA.class) void inner() {}
+            @Test @Mute(classes = ServiceA.class) void inner() {
+                assertEquals(Level.OFF, SERVICE_A.getLevel());
+                assertEquals(Level.INFO, ROOT.getLevel());
+            }
         }
+    }
+
+    static class NoMuteFixture {
+        @Test void run() {}
+    }
+
+    @Mute
+    static class ClassLevelOnlyFixture {
+        @Test void run() {}
     }
 
     // ---------- Dummy service marker classes ----------
@@ -181,5 +326,67 @@ class MuteExtensionTest {
                         .selectors(DiscoverySelectors.selectClass(fixtureClass))
                         .build());
     }
-}
 
+    private static MuteRestorer invokeMute(MuteExtension extension, Mute annotation) throws Exception {
+        Method mute = MuteExtension.class.getDeclaredMethod("mute", Mute.class);
+        mute.setAccessible(true);
+        return (MuteRestorer) mute.invoke(extension, annotation);
+    }
+
+    private static Mute muteAnnotation(Class<?>... classes) {
+        return (Mute) Proxy.newProxyInstance(
+                Mute.class.getClassLoader(),
+                new Class<?>[] {Mute.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "classes" -> classes;
+                    case "annotationType" -> Mute.class;
+                    case "toString" -> "@Mute(classes=" + java.util.Arrays.toString(classes) + ")";
+                    case "hashCode" -> 31 * Mute.class.hashCode() + java.util.Arrays.hashCode(classes);
+                    case "equals" -> proxy == args[0];
+                    default -> method.getDefaultValue();
+                });
+    }
+
+    private static ExtensionContext contextFor(AnnotatedElement element, Class<?> testClass) {
+        Map<ExtensionContext.Namespace, ExtensionContext.Store> stores = new HashMap<>();
+
+        return (ExtensionContext) Proxy.newProxyInstance(
+                ExtensionContext.class.getClassLoader(),
+                new Class<?>[] {ExtensionContext.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "getElement" -> Optional.ofNullable(element);
+                    case "getRequiredTestClass" -> testClass;
+                    case "getStore" -> stores.computeIfAbsent(
+                            (ExtensionContext.Namespace) args[0],
+                            ignored -> createStore());
+                    case "toString" -> "ExtensionContextProxy";
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    case "equals" -> proxy == args[0];
+                    default -> throw new UnsupportedOperationException("Not needed in this test: " + method.getName());
+                });
+    }
+
+    private static ExtensionContext.Store createStore() {
+        Map<Object, Object> values = new HashMap<>();
+
+        return (ExtensionContext.Store) Proxy.newProxyInstance(
+                ExtensionContext.Store.class.getClassLoader(),
+                new Class<?>[] {ExtensionContext.Store.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "put" -> {
+                        values.put(args[0], args[1]);
+                        yield null;
+                    }
+                    case "get" -> args.length == 1
+                            ? values.get(args[0])
+                            : ((Class<?>) args[1]).cast(values.get(args[0]));
+                    case "remove" -> args.length == 1
+                            ? values.remove(args[0])
+                            : ((Class<?>) args[1]).cast(values.remove(args[0]));
+                    case "toString" -> "StoreProxy";
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    case "equals" -> proxy == args[0];
+                    default -> throw new UnsupportedOperationException("Not needed in this test: " + method.getName());
+                });
+    }
+}

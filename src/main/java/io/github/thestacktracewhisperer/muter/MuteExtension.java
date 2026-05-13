@@ -46,10 +46,11 @@ public class MuteExtension implements BeforeTestExecutionCallback, AfterTestExec
     }
 
     private MuteRestorer mute(Mute annotation) {
-        if (!(LoggerFactory.getILoggerFactory() instanceof LoggerContext ctx)) {
+        Object loggerFactory = getLoggerFactory();
+        if (!(loggerFactory instanceof LoggerContext ctx)) {
             throw new IllegalStateException(
                     "muter-logback requires Logback Classic on the classpath; found: "
-                            + LoggerFactory.getILoggerFactory().getClass().getName());
+                            + (loggerFactory == null ? "null" : loggerFactory.getClass().getName()));
         }
 
         Class<?>[] classes = annotation.classes();
@@ -70,5 +71,9 @@ public class MuteExtension implements BeforeTestExecutionCallback, AfterTestExec
         }
 
         return () -> originalLevels.forEach(Logger::setLevel);
+    }
+
+    Object getLoggerFactory() {
+        return LoggerFactory.getILoggerFactory();
     }
 }
