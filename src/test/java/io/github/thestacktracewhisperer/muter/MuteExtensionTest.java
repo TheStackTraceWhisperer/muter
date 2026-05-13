@@ -129,12 +129,7 @@ class MuteExtensionTest {
     @Test
     @DisplayName("Missing Logback binding fails fast with helpful error")
     void missingLogbackBindingFailsFast() throws Exception {
-        MuteExtension extension = new MuteExtension() {
-            @Override
-            Object getLoggerFactory() {
-                return new Object();
-            }
-        };
+        MuteExtension extension = new MuteExtension(() -> new Object());
         Method method = RootMuteFixture.class.getDeclaredMethod("run");
         ExtensionContext context = contextFor(method, RootMuteFixture.class);
 
@@ -148,12 +143,7 @@ class MuteExtensionTest {
     @Test
     @DisplayName("Null logger factory fails fast with null type in error")
     void nullLoggerFactoryFailsFast() throws Exception {
-        MuteExtension extension = new MuteExtension() {
-            @Override
-            Object getLoggerFactory() {
-                return null;
-            }
-        };
+        MuteExtension extension = new MuteExtension(() -> null);
         Method method = RootMuteFixture.class.getDeclaredMethod("run");
         ExtensionContext context = contextFor(method, RootMuteFixture.class);
 
@@ -205,9 +195,9 @@ class MuteExtensionTest {
 
     @Test
     @DisplayName("Direct mute with empty classes mutes root and restores level")
-    void directMuteWithEmptyClassesMutesRootAndRestoresLevel() throws Exception {
+    void directMuteWithEmptyClassesMutesRootAndRestoresLevel() {
         ROOT.setLevel(Level.INFO);
-        MuteRestorer restorer = invokeMute(new MuteExtension(), muteAnnotation());
+        MuteRestorer restorer = new MuteExtension().mute(muteAnnotation());
 
         assertEquals(Level.OFF, ROOT.getLevel());
         restorer.restore();
@@ -216,11 +206,11 @@ class MuteExtensionTest {
 
     @Test
     @DisplayName("Direct mute with classes mutes only selected loggers and restores")
-    void directMuteWithClassesMutesOnlySelectedLoggersAndRestores() throws Exception {
+    void directMuteWithClassesMutesOnlySelectedLoggersAndRestores() {
         ROOT.setLevel(Level.INFO);
         SERVICE_A.setLevel(Level.DEBUG);
         SERVICE_B.setLevel(Level.ERROR);
-        MuteRestorer restorer = invokeMute(new MuteExtension(), muteAnnotation(ServiceA.class, ServiceB.class));
+        MuteRestorer restorer = new MuteExtension().mute(muteAnnotation(ServiceA.class, ServiceB.class));
 
         assertEquals(Level.INFO, ROOT.getLevel());
         assertEquals(Level.OFF, SERVICE_A.getLevel());
@@ -325,12 +315,6 @@ class MuteExtensionTest {
                 LauncherDiscoveryRequestBuilder.request()
                         .selectors(DiscoverySelectors.selectClass(fixtureClass))
                         .build());
-    }
-
-    private static MuteRestorer invokeMute(MuteExtension extension, Mute annotation) throws Exception {
-        Method mute = MuteExtension.class.getDeclaredMethod("mute", Mute.class);
-        mute.setAccessible(true);
-        return (MuteRestorer) mute.invoke(extension, annotation);
     }
 
     private static Mute muteAnnotation(Class<?>... classes) {
