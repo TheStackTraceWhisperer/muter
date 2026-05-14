@@ -27,8 +27,10 @@ public class MuteSpockExtension implements IAnnotationDrivenExtension<Mute> {
     public void visitSpecAnnotation(Mute annotation, SpecInfo spec) {
         List<LogMuter> logMuters = loadLogMuters();
         for (FeatureInfo feature : spec.getFeatures()) {
-            feature.getFeatureMethod().addInterceptor(
-                    new MuteInterceptor(annotation.classes(), logMuters));
+            if (feature.getFeatureMethod().getReflection().getAnnotation(Mute.class) == null) {
+                feature.getFeatureMethod().addInterceptor(
+                        new MuteInterceptor(annotation.classes(), logMuters));
+            }
         }
     }
 
