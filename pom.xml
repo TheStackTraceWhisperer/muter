@@ -5,19 +5,18 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.thestacktracewhisperer</groupId>
-    <artifactId>muter-parent</artifactId>
+    <artifactId>muter</artifactId>
     <version>1.0.0</version>
     <packaging>pom</packaging>
 
-    <name>muter-parent</name>
-    <description>Parent POM for the muter JUnit 5 logging-mute extension family.</description>
-    <url>https://github.com/TheStackTraceWhisperer/muter-logback</url>
+    <name>muter</name>
+    <description>Parent POM for the muter logging-mute extension family (JUnit 5 and TestNG).</description>
+    <url>https://github.com/TheStackTraceWhisperer/muter</url>
 
     <modules>
         <module>muter-core</module>
-        <module>muter-logback</module>
-        <module>muter-log4j</module>
-        <module>muter-jul</module>
+        <module>muter-junit5</module>
+        <module>muter-testng</module>
     </modules>
 
     <licenses>
@@ -37,18 +36,19 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/TheStackTraceWhisperer/muter-logback.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/TheStackTraceWhisperer/muter-logback.git</developerConnection>
-        <url>https://github.com/TheStackTraceWhisperer/muter-logback</url>
+        <connection>scm:git:git://github.com/TheStackTraceWhisperer/muter.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/TheStackTraceWhisperer/muter.git</developerConnection>
+        <url>https://github.com/TheStackTraceWhisperer/muter</url>
         <tag>HEAD</tag>
     </scm>
 
     <properties>
-        <java.version>17</java.version>
+        <java.version>21</java.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.10.2</junit.version>
         <junit.platform.version>1.10.2</junit.platform.version>
+        <testng.version>7.10.2</testng.version>
         <slf4j.version>2.0.13</slf4j.version>
         <logback.version>1.5.6</logback.version>
         <log4j.version>2.26.0</log4j.version>
@@ -63,6 +63,16 @@
             <dependency>
                 <groupId>io.github.thestacktracewhisperer</groupId>
                 <artifactId>muter-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.thestacktracewhisperer</groupId>
+                <artifactId>muter-junit5-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.thestacktracewhisperer</groupId>
+                <artifactId>muter-testng-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -81,6 +91,13 @@
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-launcher</artifactId>
                 <version>${junit.platform.version}</version>
+            </dependency>
+
+            <!-- TestNG -->
+            <dependency>
+                <groupId>org.testng</groupId>
+                <artifactId>testng</artifactId>
+                <version>${testng.version}</version>
             </dependency>
 
             <!-- Logging frameworks -->
@@ -163,7 +180,7 @@
                         <configuration>
                             <rules>
                                 <requireJavaVersion>
-                                    <version>[17,)</version>
+                                    <version>[21,)</version>
                                 </requireJavaVersion>
                             </rules>
                         </configuration>
