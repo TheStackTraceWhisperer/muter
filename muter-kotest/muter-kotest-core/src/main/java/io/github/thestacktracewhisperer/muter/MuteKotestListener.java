@@ -69,6 +69,8 @@ public class MuteKotestListener implements BeforeEachListener, AfterEachListener
     /**
      * Mutes loggers if the given spec class is annotated with {@link Mute}.
      * Package-private for testing.
+     *
+     * @deprecated Use {@link #muteBefore(Object, Class)} with an execution-context key.
      */
     @Deprecated(forRemoval = false)
     void muteBefore(Class<?> specClass) {
@@ -113,6 +115,8 @@ public class MuteKotestListener implements BeforeEachListener, AfterEachListener
     /**
      * Restores loggers if a restorer is held for the given execution key.
      * Package-private for testing.
+     *
+     * @deprecated Use {@link #restoreAfter(Object)} with an execution-context key.
      */
     @Deprecated(forRemoval = false)
     void restoreAfter() {
