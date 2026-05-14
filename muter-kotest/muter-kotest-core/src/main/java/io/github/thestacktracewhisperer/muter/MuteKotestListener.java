@@ -40,6 +40,7 @@ public class MuteKotestListener implements BeforeEachListener, AfterEachListener
 
     public MuteKotestListener() {
         List<LogMuter> discovered = new ArrayList<>();
+        ServiceLoader.load(LogMuter.class).forEach(discovered::add);
         this.logMuters = Collections.unmodifiableList(discovered);
     }
 
