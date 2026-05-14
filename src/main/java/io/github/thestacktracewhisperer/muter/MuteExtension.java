@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * JUnit 5 extension registered by {@link Mute}. Mutes Logback loggers before
@@ -22,6 +23,19 @@ import java.util.Optional;
 public class MuteExtension implements BeforeTestExecutionCallback, AfterTestExecutionCallback {
 
     private final JUnitMuteStateStack stateStack = new JUnitMuteStateStack();
+    private final Supplier<Object> loggerFactorySupplier;
+
+    public MuteExtension() {
+        this(LoggerFactory::getILoggerFactory);
+    }
+
+    /**
+     * Testing seam that allows controlled logger-factory injection in unit tests.
+     * Production use should rely on {@link #MuteExtension()}.
+     */
+    MuteExtension(Supplier<Object> loggerFactorySupplier) {
+        this.loggerFactorySupplier = loggerFactorySupplier;
+    }
 
     @Override
     public void beforeTestExecution(ExtensionContext context) {
@@ -45,11 +59,12 @@ public class MuteExtension implements BeforeTestExecutionCallback, AfterTestExec
                 .or(() -> Optional.ofNullable(context.getRequiredTestClass().getAnnotation(Mute.class)));
     }
 
-    private MuteRestorer mute(Mute annotation) {
-        if (!(LoggerFactory.getILoggerFactory() instanceof LoggerContext ctx)) {
+    MuteRestorer mute(Mute annotation) {
+        Object loggerFactory = loggerFactorySupplier.get();
+        if (!(loggerFactory instanceof LoggerContext ctx)) {
             throw new IllegalStateException(
                     "muter-logback requires Logback Classic on the classpath; found: "
-                            + LoggerFactory.getILoggerFactory().getClass().getName());
+                            + (loggerFactory == null ? "null" : loggerFactory.getClass().getName()));
         }
 
         Class<?>[] classes = annotation.classes();
