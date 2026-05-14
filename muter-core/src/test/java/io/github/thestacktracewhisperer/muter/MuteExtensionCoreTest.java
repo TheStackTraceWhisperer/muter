@@ -97,7 +97,7 @@ class MuteExtensionCoreTest {
 
     @Test
     @DisplayName("All LogMuters are called and all restorers are invoked")
-    void allLogMustersCalledAndRestored() throws Exception {
+    void allLogMutersCalledAndRestored() throws Exception {
         AtomicInteger muteCount = new AtomicInteger();
         AtomicInteger restoreCount = new AtomicInteger();
 
