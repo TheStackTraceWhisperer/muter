@@ -4,6 +4,8 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import org.junit.jupiter.api.*;
 import org.slf4j.LoggerFactory;
+import org.testng.ITestListener;
+import org.testng.ITestResult;
 import org.testng.TestNG;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -57,7 +59,7 @@ class MuteListenerLogbackTest {
     @DisplayName("Root logger is restored even after a @Mute test that throws")
     void rootLoggerRestoredAfterFailingTest() {
         ROOT.setLevel(Level.WARN);
-        runTestNG(RootMuteThrowsFixture.class);
+        runTestNG(RootMuteThrowsFixture.class, 0, 1);
         assertEquals(Level.WARN, ROOT.getLevel());
     }
 
@@ -213,8 +215,21 @@ class MuteListenerLogbackTest {
     // ---------- Helper ----------
 
     private static void runTestNG(Class<?> fixtureClass) {
+        runTestNG(fixtureClass, 1, 0);
+    }
+
+    private static void runTestNG(Class<?> fixtureClass, int expectedPassed, int expectedFailed) {
+        int[] counts = {0, 0}; // [passed, failed]
         TestNG testng = new TestNG(false);
         testng.setTestClasses(new Class<?>[] {fixtureClass});
+        testng.addListener(new ITestListener() {
+            @Override public void onTestSuccess(ITestResult r) { counts[0]++; }
+            @Override public void onTestFailure(ITestResult r) { counts[1]++; }
+        });
         testng.run();
+        assertEquals(expectedPassed, counts[0],
+                fixtureClass.getSimpleName() + ": expected " + expectedPassed + " passed test(s)");
+        assertEquals(expectedFailed, counts[1],
+                fixtureClass.getSimpleName() + ": expected " + expectedFailed + " failed test(s)");
     }
 }

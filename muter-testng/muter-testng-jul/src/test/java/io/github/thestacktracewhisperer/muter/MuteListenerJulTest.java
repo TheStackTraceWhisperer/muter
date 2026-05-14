@@ -1,6 +1,8 @@
 package io.github.thestacktracewhisperer.muter;
 
 import org.junit.jupiter.api.*;
+import org.testng.ITestListener;
+import org.testng.ITestResult;
 import org.testng.TestNG;
 
 import java.util.logging.Level;
@@ -48,7 +50,7 @@ class MuteListenerJulTest {
     @DisplayName("Root logger is restored even after a @Mute test that throws")
     void rootLoggerRestoredAfterFailingTest() {
         ROOT.setLevel(Level.WARNING);
-        runTestNG(RootMuteThrowsFixture.class);
+        runTestNG(RootMuteThrowsFixture.class, 0, 1);
         assertEquals(Level.WARNING, ROOT.getLevel());
     }
 
@@ -178,8 +180,21 @@ class MuteListenerJulTest {
     // ---------- Helper ----------
 
     private static void runTestNG(Class<?> fixtureClass) {
+        runTestNG(fixtureClass, 1, 0);
+    }
+
+    private static void runTestNG(Class<?> fixtureClass, int expectedPassed, int expectedFailed) {
+        int[] counts = {0, 0}; // [passed, failed]
         TestNG testng = new TestNG(false);
         testng.setTestClasses(new Class<?>[] {fixtureClass});
+        testng.addListener(new ITestListener() {
+            @Override public void onTestSuccess(ITestResult r) { counts[0]++; }
+            @Override public void onTestFailure(ITestResult r) { counts[1]++; }
+        });
         testng.run();
+        assertEquals(expectedPassed, counts[0],
+                fixtureClass.getSimpleName() + ": expected " + expectedPassed + " passed test(s)");
+        assertEquals(expectedFailed, counts[1],
+                fixtureClass.getSimpleName() + ": expected " + expectedFailed + " failed test(s)");
     }
 }
