@@ -46,4 +46,10 @@ Original log levels are restored automatically after every test, regardless of p
 
 - Java 21+ (Java 21 is the minimum supported runtime and release level)
 - JUnit Jupiter 5.x
-- SLF4J 2.x + Logback Classic 1.5.x
+
+## Provided Dependencies
+
+The following dependencies must be present on the classpath at runtime but are **not** bundled with this library — your project is expected to supply them:
+
+- SLF4J 2.x
+- Logback Classic 1.5.x
