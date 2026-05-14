@@ -10,7 +10,7 @@
     <packaging>pom</packaging>
 
     <name>muter</name>
-    <description>Parent POM for the muter logging-mute extension family (JUnit 5 and TestNG).</description>
+    <description>Parent POM for the muter logging-mute extension family (JUnit 5, TestNG, Spock, and Kotest).</description>
     <url>https://github.com/TheStackTraceWhisperer/muter</url>
 
     <modules>

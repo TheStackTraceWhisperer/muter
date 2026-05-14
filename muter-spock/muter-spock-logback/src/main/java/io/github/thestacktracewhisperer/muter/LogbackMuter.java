@@ -53,7 +53,7 @@ public class LogbackMuter implements LogMuter {
         } else {
             for (Class<?> clazz : targetClasses) {
                 Logger logger = ctx.getLogger(clazz.getName());
-                originalLevels.put(logger, logger.getLevel());
+                originalLevels.putIfAbsent(logger, logger.getLevel());
                 logger.setLevel(Level.OFF);
             }
         }

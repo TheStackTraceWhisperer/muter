@@ -31,20 +31,23 @@ public class Log4j2Muter implements LogMuter {
             Configurator.setRootLevel(Level.OFF);
             restoreActions.add(() -> Configurator.setRootLevel(original));
         } else {
+            java.util.Set<String> processedLoggers = new java.util.HashSet<>();
             for (Class<?> clazz : targetClasses) {
                 org.apache.logging.log4j.core.Logger coreLogger =
                         (org.apache.logging.log4j.core.Logger) LogManager.getLogger(clazz);
                 String name = coreLogger.getName();
-                boolean hadExplicitConfig = ctx.getConfiguration().getLoggers().containsKey(name);
-                Level original = coreLogger.getLevel();
-                Configurator.setLevel(name, Level.OFF);
-                if (hadExplicitConfig) {
-                    restoreActions.add(() -> Configurator.setLevel(name, original));
-                } else {
-                    restoreActions.add(() -> {
-                        ctx.getConfiguration().removeLogger(name);
-                        ctx.updateLoggers();
-                    });
+                if (processedLoggers.add(name)) {
+                    boolean hadExplicitConfig = ctx.getConfiguration().getLoggers().containsKey(name);
+                    Level original = coreLogger.getLevel();
+                    Configurator.setLevel(name, Level.OFF);
+                    if (hadExplicitConfig) {
+                        restoreActions.add(() -> Configurator.setLevel(name, original));
+                    } else {
+                        restoreActions.add(() -> {
+                            ctx.getConfiguration().removeLogger(name);
+                            ctx.updateLoggers();
+                        });
+                    }
                 }
             }
         }
