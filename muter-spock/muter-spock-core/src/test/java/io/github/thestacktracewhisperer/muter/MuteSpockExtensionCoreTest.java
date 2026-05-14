@@ -2,6 +2,7 @@ package io.github.thestacktracewhisperer.muter;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.spockframework.runtime.extension.ExtensionAnnotation;
 import org.spockframework.runtime.extension.IMethodInvocation;
 
 import java.lang.reflect.Proxy;
@@ -16,6 +17,15 @@ import static org.junit.jupiter.api.Assertions.*;
  * Uses mock {@link LogMuter} instances to avoid any dependency on a concrete logging framework.
  */
 class MuteSpockExtensionCoreTest {
+
+    @Test
+    @DisplayName("@Mute annotation is properly configured with @ExtensionAnnotation")
+    void muteAnnotationHasExtensionAnnotation() {
+        ExtensionAnnotation extensionAnnotation = Mute.class.getAnnotation(ExtensionAnnotation.class);
+        assertNotNull(extensionAnnotation, "@Mute should be annotated with @ExtensionAnnotation");
+        assertEquals(MuteSpockExtension.class, extensionAnnotation.value(),
+                "@ExtensionAnnotation should reference MuteSpockExtension.class");
+    }
 
     @Test
     @DisplayName("Interceptor calls mute() before and restore() after feature execution")

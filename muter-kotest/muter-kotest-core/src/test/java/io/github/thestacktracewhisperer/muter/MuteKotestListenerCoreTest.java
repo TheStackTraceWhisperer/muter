@@ -1,5 +1,6 @@
 package io.github.thestacktracewhisperer.muter;
 
+import io.kotest.core.annotation.AutoScan;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -15,6 +16,13 @@ import static org.junit.jupiter.api.Assertions.*;
  * Uses mock {@link LogMuter} instances to avoid any dependency on a concrete logging framework.
  */
 class MuteKotestListenerCoreTest {
+
+    @Test
+    @DisplayName("MuteKotestListener is properly configured with @AutoScan")
+    void listenerHasAutoScanAnnotation() {
+        AutoScan autoScan = MuteKotestListener.class.getAnnotation(AutoScan.class);
+        assertNotNull(autoScan, "MuteKotestListener should be annotated with @AutoScan for auto-discovery");
+    }
 
     @Test
     @DisplayName("Spec without @Mute annotation: LogMuter.mute() is never called")
