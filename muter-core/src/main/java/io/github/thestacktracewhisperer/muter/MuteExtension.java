@@ -53,10 +53,21 @@ public class MuteExtension implements BeforeTestExecutionCallback, AfterTestExec
                         + "to your test dependencies.");
             }
             List<MuteRestorer> restorers = new ArrayList<>(logMuters.size());
-            for (LogMuter muter : logMuters) {
-                restorers.add(muter.mute(annotation));
+            try {
+                for (LogMuter muter : logMuters) {
+                    restorers.add(muter.mute(annotation));
+                }
+            } catch (RuntimeException | Error e) {
+                for (int i = restorers.size() - 1; i >= 0; i--) {
+                    restorers.get(i).restore();
+                }
+                throw e;
             }
-            stateStack.push(context, () -> restorers.forEach(MuteRestorer::restore));
+            stateStack.push(context, () -> {
+                for (int i = restorers.size() - 1; i >= 0; i--) {
+                    restorers.get(i).restore();
+                }
+            });
         });
     }
 
