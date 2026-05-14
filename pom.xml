@@ -153,7 +153,7 @@
                         <param>io.github.thestacktracewhisperer.muter.*</param>
                     </targetClasses>
                     <targetTests>
-                        <param>io.github.thestacktracewhisperer.muter.*</param>
+                        <param>io.github.thestacktracewhisperer.muter.*Test</param>
                     </targetTests>
                     <mutators>
                         <mutator>STRONGER</mutator>
