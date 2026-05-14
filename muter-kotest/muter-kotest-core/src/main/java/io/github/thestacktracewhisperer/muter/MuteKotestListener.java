@@ -11,7 +11,9 @@ import kotlin.coroutines.Continuation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Kotest listener that mutes loggers before each test in a spec annotated with {@link Mute}
@@ -31,7 +33,7 @@ import java.util.ServiceLoader;
 public class MuteKotestListener implements BeforeEachListener, AfterEachListener {
 
     private final List<LogMuter> logMuters;
-    private final ThreadLocal<MuteRestorer> restorerHolder = new ThreadLocal<>();
+    private final Map<Object, MuteRestorer> restorerHolder = new ConcurrentHashMap<>();
 
     @Override
     public String getName() {
@@ -54,13 +56,13 @@ public class MuteKotestListener implements BeforeEachListener, AfterEachListener
 
     @Override
     public Object beforeEach(TestCase testCase, Continuation<? super Unit> $completion) {
-        muteBefore(testCase.getSpec().getClass());
+        muteBefore(testCase, testCase.getSpec().getClass());
         return Unit.INSTANCE;
     }
 
     @Override
     public Object afterEach(TestCase testCase, TestResult result, Continuation<? super Unit> $completion) {
-        restoreAfter();
+        restoreAfter(testCase);
         return Unit.INSTANCE;
     }
 
@@ -69,6 +71,10 @@ public class MuteKotestListener implements BeforeEachListener, AfterEachListener
      * Package-private for testing.
      */
     void muteBefore(Class<?> specClass) {
+        muteBefore(Thread.currentThread(), specClass);
+    }
+
+    void muteBefore(Object executionKey, Class<?> specClass) {
         Mute mute = specClass.getAnnotation(Mute.class);
         if (mute == null) {
             return;
@@ -90,11 +96,15 @@ public class MuteKotestListener implements BeforeEachListener, AfterEachListener
             }
             throw e;
         }
-        restorerHolder.set(() -> {
+        MuteRestorer restorer = () -> {
             for (int i = restorers.size() - 1; i >= 0; i--) {
                 restorers.get(i).restore();
             }
-        });
+        };
+        MuteRestorer previous = restorerHolder.put(executionKey, restorer);
+        if (previous != null) {
+            previous.restore();
+        }
     }
 
     /**
@@ -102,9 +112,12 @@ public class MuteKotestListener implements BeforeEachListener, AfterEachListener
      * Package-private for testing.
      */
     void restoreAfter() {
-        MuteRestorer restorer = restorerHolder.get();
+        restoreAfter(Thread.currentThread());
+    }
+
+    void restoreAfter(Object executionKey) {
+        MuteRestorer restorer = restorerHolder.remove(executionKey);
         if (restorer != null) {
-            restorerHolder.remove();
             restorer.restore();
         }
     }

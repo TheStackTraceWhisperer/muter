@@ -4,6 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -79,7 +80,40 @@ class MuteKotestListenerCoreTest {
     @DisplayName("restoreAfter() is a no-op when no mute was performed")
     void restoreAfterIsNoOpWhenNoMute() {
         MuteKotestListener listener = new MuteKotestListener(List.of());
-        assertDoesNotThrow(listener::restoreAfter, "restoreAfter() should not throw when nothing was muted");
+        assertDoesNotThrow(() -> listener.restoreAfter(), "restoreAfter() should not throw when nothing was muted");
+    }
+
+    @Test
+    @DisplayName("Restorer is resolved by execution key, not current thread")
+    void restorerIsBoundToExecutionKey() throws InterruptedException {
+        AtomicBoolean restored = new AtomicBoolean();
+        LogMuter mockMuter = classes -> () -> restored.set(true);
+        MuteKotestListener listener = new MuteKotestListener(List.of(mockMuter));
+        Object executionKey = new Object();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+
+        Thread beforeThread = new Thread(() -> {
+            try {
+                listener.muteBefore(executionKey, MutedSpec.class);
+            } catch (Throwable t) {
+                failure.set(t);
+            }
+        });
+        beforeThread.start();
+        beforeThread.join();
+
+        Thread afterThread = new Thread(() -> {
+            try {
+                listener.restoreAfter(executionKey);
+            } catch (Throwable t) {
+                failure.set(t);
+            }
+        });
+        afterThread.start();
+        afterThread.join();
+
+        assertNull(failure.get(), "cross-thread listener calls should not fail");
+        assertTrue(restored.get(), "restore() should still run when afterEach executes on a different thread");
     }
 
     @Test
