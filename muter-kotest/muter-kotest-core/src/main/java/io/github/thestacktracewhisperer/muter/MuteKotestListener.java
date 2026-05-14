@@ -124,9 +124,10 @@ public class MuteKotestListener implements BeforeEachListener, AfterEachListener
     }
 
     void restoreAfter(Object executionKey) {
-        MuteRestorer restorer = restorerHolder.remove(executionKey);
+        MuteRestorer restorer = restorerHolder.get(executionKey);
         if (restorer != null) {
             restorer.restore();
+            restorerHolder.remove(executionKey, restorer);
         }
     }
 }
