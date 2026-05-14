@@ -8,20 +8,19 @@
         <groupId>io.github.thestacktracewhisperer</groupId>
         <artifactId>muter</artifactId>
         <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>muter-core</artifactId>
-    <packaging>jar</packaging>
+    <artifactId>muter-testng</artifactId>
+    <packaging>pom</packaging>
 
-    <name>muter-core</name>
-    <description>Core logging-mute interfaces shared by all muter framework modules.</description>
+    <name>muter-testng</name>
+    <description>Parent POM for the muter TestNG listener modules.</description>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
+    <modules>
+        <module>muter-testng-core</module>
+        <module>muter-testng-logback</module>
+        <module>muter-testng-log4j</module>
+        <module>muter-testng-jul</module>
+    </modules>
 </project>
