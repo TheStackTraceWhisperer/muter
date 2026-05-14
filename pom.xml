@@ -10,13 +10,15 @@
     <packaging>pom</packaging>
 
     <name>muter</name>
-    <description>Parent POM for the muter logging-mute extension family (JUnit 5 and TestNG).</description>
+    <description>Parent POM for the muter logging-mute extension family (JUnit 5, TestNG, Spock, and Kotest).</description>
     <url>https://github.com/TheStackTraceWhisperer/muter</url>
 
     <modules>
         <module>muter-core</module>
         <module>muter-junit5</module>
         <module>muter-testng</module>
+        <module>muter-spock</module>
+        <module>muter-kotest</module>
     </modules>
 
     <licenses>
@@ -55,6 +57,9 @@
         <jacoco.version>0.8.12</jacoco.version>
         <pitest.version>1.17.2</pitest.version>
         <pitest.junit5.plugin.version>1.2.1</pitest.junit5.plugin.version>
+        <spock.version>2.4-groovy-4.0</spock.version>
+        <kotest.version>5.9.1</kotest.version>
+        <kotlin.version>1.9.23</kotlin.version>
     </properties>
 
     <dependencyManagement>
@@ -73,6 +78,16 @@
             <dependency>
                 <groupId>io.github.thestacktracewhisperer</groupId>
                 <artifactId>muter-testng-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.thestacktracewhisperer</groupId>
+                <artifactId>muter-spock-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.thestacktracewhisperer</groupId>
+                <artifactId>muter-kotest-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -120,6 +135,27 @@
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-core</artifactId>
                 <version>${log4j.version}</version>
+            </dependency>
+
+            <!-- Spock -->
+            <dependency>
+                <groupId>org.spockframework</groupId>
+                <artifactId>spock-core</artifactId>
+                <version>${spock.version}</version>
+            </dependency>
+
+            <!-- Kotest -->
+            <dependency>
+                <groupId>io.kotest</groupId>
+                <artifactId>kotest-framework-api-jvm</artifactId>
+                <version>${kotest.version}</version>
+            </dependency>
+
+            <!-- Kotlin stdlib (required as provided for Kotest integration) -->
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib</artifactId>
+                <version>${kotlin.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
