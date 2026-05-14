@@ -22,9 +22,10 @@ class MuteKotestListenerCoreTest {
         AtomicBoolean muteCalled = new AtomicBoolean();
         LogMuter mockMuter = classes -> { muteCalled.set(true); return () -> {}; };
         MuteKotestListener listener = new MuteKotestListener(List.of(mockMuter));
+        Object executionKey = new Object();
 
-        listener.muteBefore(UnmutedSpec.class);
-        listener.restoreAfter();
+        listener.muteBefore(executionKey, UnmutedSpec.class);
+        listener.restoreAfter(executionKey);
 
         assertFalse(muteCalled.get(), "mute() should not be called for un-annotated spec");
     }
@@ -39,11 +40,12 @@ class MuteKotestListenerCoreTest {
             return () -> restored.set(true);
         };
         MuteKotestListener listener = new MuteKotestListener(List.of(mockMuter));
+        Object executionKey = new Object();
 
-        listener.muteBefore(MutedSpec.class);
+        listener.muteBefore(executionKey, MutedSpec.class);
         assertTrue(muteCalled.get(), "mute() should be called");
 
-        listener.restoreAfter();
+        listener.restoreAfter(executionKey);
         assertTrue(restored.get(), "restore() should be called");
     }
 
@@ -56,11 +58,12 @@ class MuteKotestListenerCoreTest {
         LogMuter muter1 = classes -> { muteCount.incrementAndGet(); return restoreCount::incrementAndGet; };
         LogMuter muter2 = classes -> { muteCount.incrementAndGet(); return restoreCount::incrementAndGet; };
         MuteKotestListener listener = new MuteKotestListener(List.of(muter1, muter2));
+        Object executionKey = new Object();
 
-        listener.muteBefore(MutedSpec.class);
+        listener.muteBefore(executionKey, MutedSpec.class);
         assertEquals(2, muteCount.get());
 
-        listener.restoreAfter();
+        listener.restoreAfter(executionKey);
         assertEquals(2, restoreCount.get());
     }
 
@@ -71,7 +74,7 @@ class MuteKotestListenerCoreTest {
 
         IllegalStateException ex = assertThrows(
                 IllegalStateException.class,
-                () -> listener.muteBefore(MutedSpec.class));
+                () -> listener.muteBefore(new Object(), MutedSpec.class));
         assertTrue(ex.getMessage().contains("No LogMuter found on the classpath"),
                 "Error message should guide user to add an implementation module");
     }
@@ -80,7 +83,7 @@ class MuteKotestListenerCoreTest {
     @DisplayName("restoreAfter() is a no-op when no mute was performed")
     void restoreAfterIsNoOpWhenNoMute() {
         MuteKotestListener listener = new MuteKotestListener(List.of());
-        assertDoesNotThrow(() -> listener.restoreAfter(), "restoreAfter() should not throw when nothing was muted");
+        assertDoesNotThrow(() -> listener.restoreAfter(new Object()), "restoreAfter() should not throw when nothing was muted");
     }
 
     @Test
@@ -123,8 +126,9 @@ class MuteKotestListenerCoreTest {
         LogMuter goodMuter = classes -> () -> firstRestored.set(true);
         LogMuter failingMuter = classes -> { throw new RuntimeException("mute failed"); };
         MuteKotestListener listener = new MuteKotestListener(List.of(goodMuter, failingMuter));
+        Object executionKey = new Object();
 
-        assertThrows(RuntimeException.class, () -> listener.muteBefore(MutedSpec.class));
+        assertThrows(RuntimeException.class, () -> listener.muteBefore(executionKey, MutedSpec.class));
         assertTrue(firstRestored.get(), "First muter's restorer should be called when second muter fails");
     }
 

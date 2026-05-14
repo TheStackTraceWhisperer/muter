@@ -70,6 +70,7 @@ public class MuteKotestListener implements BeforeEachListener, AfterEachListener
      * Mutes loggers if the given spec class is annotated with {@link Mute}.
      * Package-private for testing.
      */
+    @Deprecated(forRemoval = false)
     void muteBefore(Class<?> specClass) {
         muteBefore(Thread.currentThread(), specClass);
     }
@@ -101,16 +102,19 @@ public class MuteKotestListener implements BeforeEachListener, AfterEachListener
                 restorers.get(i).restore();
             }
         };
-        MuteRestorer previous = restorerHolder.put(executionKey, restorer);
-        if (previous != null) {
-            previous.restore();
-        }
+        restorerHolder.compute(executionKey, (key, previous) -> {
+            if (previous != null) {
+                previous.restore();
+            }
+            return restorer;
+        });
     }
 
     /**
-     * Restores loggers if a restorer is held for the current thread.
+     * Restores loggers if a restorer is held for the given execution key.
      * Package-private for testing.
      */
+    @Deprecated(forRemoval = false)
     void restoreAfter() {
         restoreAfter(Thread.currentThread());
     }
