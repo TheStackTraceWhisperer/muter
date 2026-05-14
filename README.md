@@ -15,7 +15,6 @@ This is a multimodule Maven project. Choose the module that matches your logging
 | `muter-logback` | SLF4J + Logback Classic |
 | `muter-log4j` | Apache Log4j 2 |
 | `muter-jul` | `java.util.logging` (JUL, built-in JDK) |
-| `muter-commons-logging` | Apache Commons Logging (JUL backend) |
 
 The `muter-core` module is a shared dependency pulled in automatically; you do not need to declare it explicitly.
 
@@ -81,18 +80,7 @@ Pick **one** module that matches your logging framework:
 </dependency>
 ```
 
-### Apache Commons Logging (JUL backend)
-
-```xml
-<dependency>
-    <groupId>io.github.thestacktracewhisperer</groupId>
-    <artifactId>muter-commons-logging</artifactId>
-    <version>1.0.0</version>
-    <scope>test</scope>
-</dependency>
-```
-
-> **Note:** `muter-commons-logging` supports Commons Logging when it is configured to delegate to `java.util.logging` (the default when no other framework is present). If your project routes Commons Logging through Logback or Log4j 2, use `muter-logback` or `muter-log4j` instead.
+> **Note:** Projects using Apache Commons Logging with the default JUL backend are also covered by `muter-jul`, since Commons Logging routes through `java.util.logging` in that configuration.
 
 ## Requirements
 
@@ -108,4 +96,3 @@ The following dependencies must be present on the classpath at runtime but are *
 | `muter-logback` | SLF4J 2.x, Logback Classic 1.5.x |
 | `muter-log4j` | Log4j 2 API + Core 2.x |
 | `muter-jul` | _(none — JUL is part of the JDK)_ |
-| `muter-commons-logging` | Apache Commons Logging 1.x |
