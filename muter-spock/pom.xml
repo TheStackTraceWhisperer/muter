@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.thestacktracewhisperer</groupId>
+        <artifactId>muter</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>muter-spock</artifactId>
+    <packaging>pom</packaging>
+
+    <name>muter-spock</name>
+    <description>Parent POM for the muter Spock 2 extension modules.</description>
+
+    <modules>
+        <module>muter-spock-core</module>
+        <module>muter-spock-logback</module>
+        <module>muter-spock-log4j</module>
+        <module>muter-spock-jul</module>
+    </modules>
+</project>
