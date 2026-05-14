@@ -63,7 +63,7 @@ public class Log4j2Muter implements LogMuter {
         Object ctx = LogManager.getContext(false);
         if (!(ctx instanceof LoggerContext loggerContext)) {
             throw new IllegalStateException(
-                    "muter-log4j requires Log4j 2 Core on the classpath; found: "
+                    "muter-testng-log4j requires Log4j 2 Core on the classpath; found: "
                             + (ctx == null ? "null" : ctx.getClass().getName()));
         }
         return loggerContext;

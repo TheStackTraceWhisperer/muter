@@ -38,7 +38,7 @@ public class LogbackMuter implements LogMuter {
         Object loggerFactory = loggerFactorySupplier.get();
         if (!(loggerFactory instanceof LoggerContext ctx)) {
             throw new IllegalStateException(
-                    "muter-logback requires Logback Classic on the classpath; found: "
+                    "muter-testng-logback requires Logback Classic on the classpath; found: "
                             + (loggerFactory == null ? "null" : loggerFactory.getClass().getName()));
         }
 
