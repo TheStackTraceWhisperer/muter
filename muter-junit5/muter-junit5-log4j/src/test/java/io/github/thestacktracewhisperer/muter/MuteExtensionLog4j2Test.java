@@ -1,5 +1,25 @@
 package io.github.thestacktracewhisperer.muter;
 
+/*-
+ * #%L
+ * muter
+ * %%
+ * Copyright (C) 2026 TheStackTraceWhisperer
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -10,6 +30,7 @@ import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Integration tests for the Log4j 2 implementation of the muter extension.
@@ -141,6 +162,30 @@ class MuteExtensionLog4j2Test {
 
         restorer.restore();
         assertEquals(effectiveBefore, SERVICE_A.getLevel(), "Level should be restored to inherited value");
+    }
+
+    @Test
+    @DisplayName("Non-Log4j2 context fails fast with helpful error message")
+    void nonLog4j2ContextFailsFast() {
+        Log4j2Muter muter = new Log4j2Muter(() -> new Object());
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> muter.mute(new Class<?>[0]));
+        assertEquals(
+                "muter-log4j requires Log4j 2 Core on the classpath; found: java.lang.Object",
+                ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Null context fails fast with 'null' type in error message")
+    void nullContextFailsFast() {
+        Log4j2Muter muter = new Log4j2Muter(() -> null);
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> muter.mute(new Class<?>[0]));
+        assertEquals(
+                "muter-log4j requires Log4j 2 Core on the classpath; found: null",
+                ex.getMessage());
     }
 
     // ---------- Fixture classes ----------

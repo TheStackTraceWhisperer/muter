@@ -1,5 +1,25 @@
 package io.github.thestacktracewhisperer.muter;
 
+/*-
+ * #%L
+ * muter
+ * %%
+ * Copyright (C) 2026 TheStackTraceWhisperer
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -18,6 +38,21 @@ import java.util.List;
  * throws {@link IllegalStateException} if Log4j 2 Core is not available.
  */
 public class Log4j2Muter implements LogMuter {
+
+    private final java.util.function.Supplier<Object> loggerContextSupplier;
+
+    /** Production constructor: resolves the Log4j 2 logger context via {@link LogManager}. */
+    public Log4j2Muter() {
+        this(() -> LogManager.getContext(false));
+    }
+
+    /**
+     * Testing seam that allows controlled logger-context injection in unit tests.
+     * Production use should rely on {@link #Log4j2Muter()}.
+     */
+    Log4j2Muter(java.util.function.Supplier<Object> loggerContextSupplier) {
+        this.loggerContextSupplier = loggerContextSupplier;
+    }
 
     @Override
     public MuteRestorer mute(Class<?>[] targetClasses) {
@@ -55,8 +90,8 @@ public class Log4j2Muter implements LogMuter {
         return () -> restoreActions.forEach(Runnable::run);
     }
 
-    private static LoggerContext getLoggerContext() {
-        Object ctx = LogManager.getContext(false);
+    private LoggerContext getLoggerContext() {
+        Object ctx = loggerContextSupplier.get();
         if (!(ctx instanceof LoggerContext loggerContext)) {
             throw new IllegalStateException(
                     "muter-spock-log4j requires Log4j 2 Core on the classpath; found: "

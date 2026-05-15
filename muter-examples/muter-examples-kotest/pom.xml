@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.thestacktracewhisperer</groupId>
+        <artifactId>muter-examples</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>muter-examples-kotest</artifactId>
+    <packaging>pom</packaging>
+    <name>muter-examples-kotest</name>
+    <description>Examples: Kotest × each logging framework.</description>
+    <modules>
+        <module>muter-examples-kotest-logback</module>
+        <module>muter-examples-kotest-log4j</module>
+        <module>muter-examples-kotest-jul</module>
+    </modules>
+</project>

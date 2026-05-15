@@ -1,5 +1,25 @@
 package io.github.thestacktracewhisperer.muter;
 
+/*-
+ * #%L
+ * muter
+ * %%
+ * Copyright (C) 2026 TheStackTraceWhisperer
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -141,9 +161,42 @@ class MuteSpockLog4j2Test {
         assertEquals(Level.INFO, ROOT.getLevel());
     }
 
+    @Test
+    @DisplayName("Duplicate class in target list is processed only once (dedup via processedLoggers set)")
+    void duplicateClassIsDeduplicatedAndRestored() {
+        Configurator.setLevel(SERVICE_A.getName(), Level.DEBUG);
+
+        // Pass ServiceA twice — should be processed once
+        MuteRestorer restorer = new Log4j2Muter()
+                .mute(new Class<?>[]{ServiceA.class, ServiceA.class});
+
+        assertEquals(Level.OFF, SERVICE_A.getLevel());
+        restorer.restore();
+        assertEquals(Level.DEBUG, SERVICE_A.getLevel());
+    }
+
+    @Test
+    @DisplayName("Non-Log4j 2 context supplier throws IllegalStateException with helpful message")
+    void nonLog4j2ContextFailsFast() {
+        Log4j2Muter muter = new Log4j2Muter(() -> "not-a-log4j-context");
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> muter.mute(new Class<?>[0]));
+        assertTrue(ex.getMessage().contains("muter-spock-log4j"));
+    }
+
+    @Test
+    @DisplayName("Null context supplier throws IllegalStateException mentioning null")
+    void nullContextFailsFast() {
+        Log4j2Muter muter = new Log4j2Muter(() -> null);
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> muter.mute(new Class<?>[0]));
+        assertTrue(ex.getMessage().contains("null"));
+    }
+
     // ---------- Dummy service classes ----------
 
     private static class ServiceA {}
+    private static class ServiceB {}
 
     // ---------- Helper ----------
 

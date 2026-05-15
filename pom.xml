@@ -19,6 +19,7 @@
         <module>muter-testng</module>
         <module>muter-spock</module>
         <module>muter-kotest</module>
+        <module>muter-examples</module>
     </modules>
 
     <licenses>
@@ -157,6 +158,80 @@
                 <artifactId>kotlin-stdlib</artifactId>
                 <version>${kotlin.version}</version>
             </dependency>
+
+            <!-- Kotest runner + assertions (used by example modules) -->
+            <dependency>
+                <groupId>io.kotest</groupId>
+                <artifactId>kotest-runner-junit5-jvm</artifactId>
+                <version>${kotest.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.kotest</groupId>
+                <artifactId>kotest-assertions-core-jvm</artifactId>
+                <version>${kotest.version}</version>
+            </dependency>
+
+            <!-- Internal modules — logging-framework adapters -->
+            <dependency>
+                <groupId>io.github.thestacktracewhisperer</groupId>
+                <artifactId>muter-junit5-logback</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.thestacktracewhisperer</groupId>
+                <artifactId>muter-junit5-log4j</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.thestacktracewhisperer</groupId>
+                <artifactId>muter-junit5-jul</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.thestacktracewhisperer</groupId>
+                <artifactId>muter-testng-logback</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.thestacktracewhisperer</groupId>
+                <artifactId>muter-testng-log4j</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.thestacktracewhisperer</groupId>
+                <artifactId>muter-testng-jul</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.thestacktracewhisperer</groupId>
+                <artifactId>muter-spock-logback</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.thestacktracewhisperer</groupId>
+                <artifactId>muter-spock-log4j</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.thestacktracewhisperer</groupId>
+                <artifactId>muter-spock-jul</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.thestacktracewhisperer</groupId>
+                <artifactId>muter-kotest-logback</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.thestacktracewhisperer</groupId>
+                <artifactId>muter-kotest-log4j</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.thestacktracewhisperer</groupId>
+                <artifactId>muter-kotest-jul</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -199,6 +274,22 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>3.8.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>license-maven-plugin</artifactId>
+                    <version>2.7.1</version>
+                    <configuration>
+                        <licenseName>apache_v2</licenseName>
+                        <inceptionYear>2026</inceptionYear>
+                        <organizationName>TheStackTraceWhisperer</organizationName>
+                        <projectName>muter</projectName>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.gmavenplus</groupId>
+                    <artifactId>gmavenplus-plugin</artifactId>
+                    <version>3.0.2</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -243,6 +334,26 @@
                         <id>attach-javadocs</id>
                         <goals>
                             <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>update-file-header</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>update-file-header</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>check-file-header</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check-file-header</goal>
                         </goals>
                     </execution>
                 </executions>

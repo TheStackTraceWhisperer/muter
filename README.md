@@ -12,19 +12,19 @@ This is a multimodule Maven project. Choose the module that matches your **test 
 
 ### JUnit 5
 
-| Module | Logging framework |
-|---|---|
-| `muter-junit5-logback` | SLF4J + Logback Classic |
-| `muter-junit5-log4j` | Apache Log4j 2 |
-| `muter-junit5-jul` | `java.util.logging` (JUL, built-in JDK) |
+| Module                 | Logging framework                       |
+|------------------------|-----------------------------------------|
+| `muter-junit5-logback` | SLF4J + Logback Classic                 |
+| `muter-junit5-log4j`   | Apache Log4j 2                          |
+| `muter-junit5-jul`     | `java.util.logging` (JUL, built-in JDK) |
 
 ### TestNG
 
-| Module | Logging framework |
-|---|---|
-| `muter-testng-logback` | SLF4J + Logback Classic |
-| `muter-testng-log4j` | Apache Log4j 2 |
-| `muter-testng-jul` | `java.util.logging` (JUL, built-in JDK) |
+| Module                 | Logging framework                       |
+|------------------------|-----------------------------------------|
+| `muter-testng-logback` | SLF4J + Logback Classic                 |
+| `muter-testng-log4j`   | Apache Log4j 2                          |
+| `muter-testng-jul`     | `java.util.logging` (JUL, built-in JDK) |
 
 The `muter-core`, `muter-junit5-core`, and `muter-testng-core` modules are shared dependencies pulled in automatically; you do not need to declare them explicitly.
 
@@ -32,10 +32,10 @@ There is **no classpath pollution** between JUnit 5 and TestNG modules — each 
 
 ## Usage
 
-| Scenario | Usage | Behaviour |
-|---|---|---|
-| **Mute all output** | `@Mute` | Sets the ROOT logger to `OFF`. No logs from the application or third-party libraries will print during the test. |
-| **Mute a specific class** | `@Mute(classes = { DatabaseRepository.class })` | Sets only the logger for `DatabaseRepository` to `OFF`. Other logs continue normally. |
+| Scenario                  | Usage                                           | Behaviour                                                                                                        |
+|---------------------------|-------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| **Mute all output**       | `@Mute`                                         | Sets the ROOT logger to `OFF`. No logs from the application or third-party libraries will print during the test. |
+| **Mute a specific class** | `@Mute(classes = { DatabaseRepository.class })` | Sets only the logger for `DatabaseRepository` to `OFF`. Other logs continue normally.                            |
 
 Annotate a test method or a test class:
 
@@ -142,11 +142,11 @@ Pick **one** module that matches your test framework and logging framework:
 
 The following dependencies must be present on the classpath at runtime but are **not** bundled with this library — your project is expected to supply them:
 
-| Module family | Required dependencies |
-|---|---|
-| `muter-*-logback` | SLF4J 2.x, Logback Classic 1.5.x |
-| `muter-*-log4j` | Log4j 2 API + Core 2.x |
-| `muter-*-jul` | _(none — JUL is part of the JDK)_ |
-| `muter-junit5-*` | JUnit Jupiter 5.x |
-| `muter-testng-*` | TestNG 7.5+ |
+| Module family     | Required dependencies             |
+|-------------------|-----------------------------------|
+| `muter-*-logback` | SLF4J 2.x, Logback Classic 1.5.x  |
+| `muter-*-log4j`   | Log4j 2 API + Core 2.x            |
+| `muter-*-jul`     | _(none — JUL is part of the JDK)_ |
+| `muter-junit5-*`  | JUnit Jupiter 5.x                 |
+| `muter-testng-*`  | TestNG 7.5+                       |
 

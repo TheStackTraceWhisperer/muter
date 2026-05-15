@@ -1,5 +1,25 @@
 package io.github.thestacktracewhisperer.muter;
 
+/*-
+ * #%L
+ * muter
+ * %%
+ * Copyright (C) 2026 TheStackTraceWhisperer
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
@@ -21,6 +41,7 @@ public class LogbackMuter implements LogMuter {
 
     private final Supplier<Object> loggerFactorySupplier;
 
+    /** Production constructor: resolves the logger factory from {@link org.slf4j.LoggerFactory}. */
     public LogbackMuter() {
         this(org.slf4j.LoggerFactory::getILoggerFactory);
     }
@@ -42,9 +63,7 @@ public class LogbackMuter implements LogMuter {
                             + (loggerFactory == null ? "null" : loggerFactory.getClass().getName()));
         }
 
-        Map<Logger, Level> originalLevels = targetClasses.length == 0
-                ? new HashMap<>(2)
-                : new HashMap<>(targetClasses.length * 2);
+        Map<Logger, Level> originalLevels = new HashMap<>();
 
         if (targetClasses.length == 0) {
             Logger rootLogger = ctx.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);

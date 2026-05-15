@@ -1,5 +1,25 @@
 package io.github.thestacktracewhisperer.muter;
 
+/*-
+ * #%L
+ * muter
+ * %%
+ * Copyright (C) 2026 TheStackTraceWhisperer
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -9,7 +29,10 @@ import org.testng.ITestListener;
 import org.testng.ITestResult;
 import org.testng.TestNG;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Integration tests for the Log4j 2 implementation of the TestNG muter listener.
@@ -121,6 +144,48 @@ class MuteListenerLog4j2Test {
         assertEquals(Level.INFO, ROOT.getLevel());
         assertEquals(Level.DEBUG, SERVICE_A.getLevel());
         assertEquals(Level.ERROR, SERVICE_B.getLevel());
+    }
+
+    @Test
+    @DisplayName("Public no-arg constructor can be instantiated without error")
+    void publicConstructorInstantiates() {
+        assertDoesNotThrow((org.junit.jupiter.api.function.Executable) Log4j2Muter::new);
+    }
+
+    @Test
+    @DisplayName("Non-Log4j 2 context supplier throws IllegalStateException with helpful message")
+    void nonLog4j2ContextFailsFast() {
+        Log4j2Muter muter = new Log4j2Muter(() -> "not-a-log4j-context");
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> muter.mute(new Class<?>[0]));
+        assertTrue(ex.getMessage().contains("muter-testng-log4j"),
+                "error message should mention the module name");
+    }
+
+    @Test
+    @DisplayName("Null context supplier throws IllegalStateException mentioning null")
+    void nullContextFailsFast() {
+        Log4j2Muter muter = new Log4j2Muter(() -> null);
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> muter.mute(new Class<?>[0]));
+        assertTrue(ex.getMessage().contains("null"));
+    }
+
+    @Test
+    @DisplayName("Muting a class with no explicit config removes the config entry on restore")
+    void muteClassWithNoExplicitConfigRestoresInheritance() {
+        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        // Ensure SERVICE_A has NO explicit logger config
+        ctx.getConfiguration().removeLogger(SERVICE_A.getName());
+        ctx.updateLoggers();
+
+        MuteRestorer restorer = new Log4j2Muter().mute(new Class<?>[] {ServiceA.class});
+        assertEquals(Level.OFF, SERVICE_A.getLevel());
+
+        restorer.restore();
+        // After restore the explicit entry should be gone; level inherits from root
+        assertTrue(!ctx.getConfiguration().getLoggers().containsKey(SERVICE_A.getName()),
+                "explicit logger config entry should be removed on restore");
     }
 
     // ---------- TestNG fixture classes (run programmatically, not by Surefire) ----------

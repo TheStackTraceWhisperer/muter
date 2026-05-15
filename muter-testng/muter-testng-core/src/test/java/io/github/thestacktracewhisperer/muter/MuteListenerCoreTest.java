@@ -1,5 +1,25 @@
 package io.github.thestacktracewhisperer.muter;
 
+/*-
+ * #%L
+ * muter
+ * %%
+ * Copyright (C) 2026 TheStackTraceWhisperer
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.testng.IInvokedMethod;
@@ -13,7 +33,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -123,6 +145,32 @@ class MuteListenerCoreTest {
                 () -> listener.beforeInvocation(invocation, result));
         assertTrue(ex.getMessage().contains("No LogMuter found on the classpath"),
                 "Error message should guide user to add an implementation module");
+    }
+
+    @Test
+    @DisplayName("Public no-arg constructor can be instantiated without error")
+    void publicConstructorInstantiates() {
+        assertDoesNotThrow((org.junit.jupiter.api.function.Executable) MuteListener::new);
+    }
+
+    @Test
+    @DisplayName("If a later LogMuter throws during muting, already-applied muters are rolled back and exception propagates")
+    void rollbackOnMuteFailure() {
+        AtomicBoolean firstRestored = new AtomicBoolean();
+        RuntimeException boom = new RuntimeException("boom");
+
+        LogMuter firstMuter = classes -> () -> firstRestored.set(true);
+        LogMuter failingMuter = classes -> { throw boom; };
+
+        MuteListener listener = new MuteListener(List.of(firstMuter, failingMuter));
+
+        IInvokedMethod invocation = invokedMethod(true, MethodMuteFixture.class, "run");
+        ITestResult result = testResult();
+
+        RuntimeException thrown = assertThrows(RuntimeException.class,
+                () -> listener.beforeInvocation(invocation, result));
+        assertSame(boom, thrown, "original exception should propagate");
+        assertTrue(firstRestored.get(), "first muter's restorer should be called on rollback");
     }
 
     // ---------- Fixture classes ----------
