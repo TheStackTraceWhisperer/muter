@@ -1,25 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.thestacktracewhisperer</groupId>
-    <artifactId>muter</artifactId>
+    <artifactId>mute</artifactId>
     <version>1.0.0</version>
     <packaging>pom</packaging>
 
-    <name>muter</name>
-    <description>Parent POM for the muter logging-mute extension family (JUnit 5, TestNG, Spock, and Kotest).</description>
-    <url>https://github.com/TheStackTraceWhisperer/muter</url>
+    <name>mute</name>
+    <description>Parent POM for the mute logging-mute extension family (JUnit 5, TestNG, Spock, and Kotest).</description>
+    <url>https://github.com/TheStackTraceWhisperer/mute</url>
 
     <modules>
-        <module>muter-core</module>
-        <module>muter-junit5</module>
-        <module>muter-testng</module>
-        <module>muter-spock</module>
-        <module>muter-kotest</module>
-        <module>muter-examples</module>
+        <module>mute-core</module>
+        <module>mute-junit5</module>
+        <module>mute-testng</module>
+        <module>mute-spock</module>
+        <module>mute-kotest</module>
+        <module>mute-examples</module>
     </modules>
 
     <licenses>
@@ -39,9 +41,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/TheStackTraceWhisperer/muter.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/TheStackTraceWhisperer/muter.git</developerConnection>
-        <url>https://github.com/TheStackTraceWhisperer/muter</url>
+        <connection>scm:git:git://github.com/TheStackTraceWhisperer/mute.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/TheStackTraceWhisperer/mute.git</developerConnection>
+        <url>https://github.com/TheStackTraceWhisperer/mute</url>
         <tag>HEAD</tag>
     </scm>
 
@@ -68,27 +70,27 @@
             <!-- Internal modules -->
             <dependency>
                 <groupId>io.github.thestacktracewhisperer</groupId>
-                <artifactId>muter-core</artifactId>
+                <artifactId>mute-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.thestacktracewhisperer</groupId>
-                <artifactId>muter-junit5-core</artifactId>
+                <artifactId>mute-junit5-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.thestacktracewhisperer</groupId>
-                <artifactId>muter-testng-core</artifactId>
+                <artifactId>mute-testng-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.thestacktracewhisperer</groupId>
-                <artifactId>muter-spock-core</artifactId>
+                <artifactId>mute-spock-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.thestacktracewhisperer</groupId>
-                <artifactId>muter-kotest-core</artifactId>
+                <artifactId>mute-kotest-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -174,62 +176,62 @@
             <!-- Internal modules — logging-framework adapters -->
             <dependency>
                 <groupId>io.github.thestacktracewhisperer</groupId>
-                <artifactId>muter-junit5-logback</artifactId>
+                <artifactId>mute-junit5-logback</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.thestacktracewhisperer</groupId>
-                <artifactId>muter-junit5-log4j</artifactId>
+                <artifactId>mute-junit5-log4j</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.thestacktracewhisperer</groupId>
-                <artifactId>muter-junit5-jul</artifactId>
+                <artifactId>mute-junit5-jul</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.thestacktracewhisperer</groupId>
-                <artifactId>muter-testng-logback</artifactId>
+                <artifactId>mute-testng-logback</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.thestacktracewhisperer</groupId>
-                <artifactId>muter-testng-log4j</artifactId>
+                <artifactId>mute-testng-log4j</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.thestacktracewhisperer</groupId>
-                <artifactId>muter-testng-jul</artifactId>
+                <artifactId>mute-testng-jul</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.thestacktracewhisperer</groupId>
-                <artifactId>muter-spock-logback</artifactId>
+                <artifactId>mute-spock-logback</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.thestacktracewhisperer</groupId>
-                <artifactId>muter-spock-log4j</artifactId>
+                <artifactId>mute-spock-log4j</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.thestacktracewhisperer</groupId>
-                <artifactId>muter-spock-jul</artifactId>
+                <artifactId>mute-spock-jul</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.thestacktracewhisperer</groupId>
-                <artifactId>muter-kotest-logback</artifactId>
+                <artifactId>mute-kotest-logback</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.thestacktracewhisperer</groupId>
-                <artifactId>muter-kotest-log4j</artifactId>
+                <artifactId>mute-kotest-log4j</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.thestacktracewhisperer</groupId>
-                <artifactId>muter-kotest-jul</artifactId>
+                <artifactId>mute-kotest-jul</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>
@@ -283,7 +285,7 @@
                         <licenseName>apache_v2</licenseName>
                         <inceptionYear>2026</inceptionYear>
                         <organizationName>TheStackTraceWhisperer</organizationName>
-                        <projectName>muter</projectName>
+                        <projectName>${project.name}</projectName>
                     </configuration>
                 </plugin>
                 <plugin>

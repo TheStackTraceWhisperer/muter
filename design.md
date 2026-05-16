@@ -50,10 +50,10 @@ public interface MuteRestorer {
 }
 
 ```
-### 3.3 The Logging Abstraction (LogMuter)
+### 3.3 The Logging Abstraction (LogMute)
 Inverts the dependency so the extension does not rely directly on Logback.
 ```java
-public interface LogMuter {
+public interface LogMute {
     /**
      * Mutes the loggers specified in the annotation.
      * @return A command to restore the loggers to their original state.
@@ -62,7 +62,7 @@ public interface LogMuter {
 }
 
 ```
-### 3.4 The Logback Implementation (LogbackMuter)
+### 3.4 The Logback Implementation (LogbackMute)
 Handles the direct manipulation of the ch.qos.logback API.
 ```java
 import ch.qos.logback.classic.Level;
@@ -71,7 +71,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
-public class LogbackMuter implements LogMuter {
+public class LogbackMute implements LogMute {
 
     @Override
     public MuteRestorer mute(Mute annotation) {
@@ -138,7 +138,7 @@ public class JUnitMuteStateStack {
 
 ```
 ### 3.6 The Orchestrator (MuteExtension)
-The main entry point registered by JUnit. It delegates work between the LogMuter and the JUnitMuteStateStack.
+The main entry point registered by JUnit. It delegates work between the LogMute and the JUnitMuteStateStack.
 ```java
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
@@ -146,7 +146,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 public class MuteExtension implements BeforeTestExecutionCallback, AfterTestExecutionCallback {
 
-    private final LogMuter logMuter = new LogbackMuter();
+    private final LogMute logMute = new LogbackMute();
     private final JUnitMuteStateStack stateStack = new JUnitMuteStateStack();
 
     @Override
@@ -154,7 +154,7 @@ public class MuteExtension implements BeforeTestExecutionCallback, AfterTestExec
         context.getElement()
                .map(element -> element.getAnnotation(Mute.class))
                .ifPresent(annotation -> {
-                   MuteRestorer restorer = logMuter.mute(annotation);
+                   MuteRestorer restorer = logMute.mute(annotation);
                    stateStack.push(context, restorer);
                });
     }

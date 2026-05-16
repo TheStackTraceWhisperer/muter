@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.thestacktracewhisperer</groupId>
+        <artifactId>mute</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>mute-kotest</artifactId>
+    <packaging>pom</packaging>
+
+    <name>mute-kotest</name>
+    <description>Parent POM for the mute Kotest extension modules.</description>
+
+    <modules>
+        <module>mute-kotest-core</module>
+        <module>mute-kotest-logback</module>
+        <module>mute-kotest-log4j</module>
+        <module>mute-kotest-jul</module>
+    </modules>
+</project>

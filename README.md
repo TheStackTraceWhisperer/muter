@@ -1,4 +1,4 @@
-# muter
+# mute
 
 A JUnit 5 and TestNG extension that declaratively silences logging noise during test execution.
 
@@ -14,19 +14,19 @@ This is a multimodule Maven project. Choose the module that matches your **test 
 
 | Module                 | Logging framework                       |
 |------------------------|-----------------------------------------|
-| `muter-junit5-logback` | SLF4J + Logback Classic                 |
-| `muter-junit5-log4j`   | Apache Log4j 2                          |
-| `muter-junit5-jul`     | `java.util.logging` (JUL, built-in JDK) |
+| `mute-junit5-logback` | SLF4J + Logback Classic                 |
+| `mute-junit5-log4j`   | Apache Log4j 2                          |
+| `mute-junit5-jul`     | `java.util.logging` (JUL, built-in JDK) |
 
 ### TestNG
 
 | Module                 | Logging framework                       |
 |------------------------|-----------------------------------------|
-| `muter-testng-logback` | SLF4J + Logback Classic                 |
-| `muter-testng-log4j`   | Apache Log4j 2                          |
-| `muter-testng-jul`     | `java.util.logging` (JUL, built-in JDK) |
+| `mute-testng-logback` | SLF4J + Logback Classic                 |
+| `mute-testng-log4j`   | Apache Log4j 2                          |
+| `mute-testng-jul`     | `java.util.logging` (JUL, built-in JDK) |
 
-The `muter-core`, `muter-junit5-core`, and `muter-testng-core` modules are shared dependencies pulled in automatically; you do not need to declare them explicitly.
+The `mute-core`, `mute-junit5-core`, and `mute-testng-core` modules are shared dependencies pulled in automatically; you do not need to declare them explicitly.
 
 There is **no classpath pollution** between JUnit 5 and TestNG modules — each family depends only on its own test framework.
 
@@ -70,7 +70,7 @@ Pick **one** module that matches your test framework and logging framework:
 ```xml
 <dependency>
     <groupId>io.github.thestacktracewhisperer</groupId>
-    <artifactId>muter-junit5-logback</artifactId>
+    <artifactId>mute-junit5-logback</artifactId>
     <version>1.0.0</version>
     <scope>test</scope>
 </dependency>
@@ -81,7 +81,7 @@ Pick **one** module that matches your test framework and logging framework:
 ```xml
 <dependency>
     <groupId>io.github.thestacktracewhisperer</groupId>
-    <artifactId>muter-junit5-log4j</artifactId>
+    <artifactId>mute-junit5-log4j</artifactId>
     <version>1.0.0</version>
     <scope>test</scope>
 </dependency>
@@ -92,7 +92,7 @@ Pick **one** module that matches your test framework and logging framework:
 ```xml
 <dependency>
     <groupId>io.github.thestacktracewhisperer</groupId>
-    <artifactId>muter-junit5-jul</artifactId>
+    <artifactId>mute-junit5-jul</artifactId>
     <version>1.0.0</version>
     <scope>test</scope>
 </dependency>
@@ -103,7 +103,7 @@ Pick **one** module that matches your test framework and logging framework:
 ```xml
 <dependency>
     <groupId>io.github.thestacktracewhisperer</groupId>
-    <artifactId>muter-testng-logback</artifactId>
+    <artifactId>mute-testng-logback</artifactId>
     <version>1.0.0</version>
     <scope>test</scope>
 </dependency>
@@ -114,7 +114,7 @@ Pick **one** module that matches your test framework and logging framework:
 ```xml
 <dependency>
     <groupId>io.github.thestacktracewhisperer</groupId>
-    <artifactId>muter-testng-log4j</artifactId>
+    <artifactId>mute-testng-log4j</artifactId>
     <version>1.0.0</version>
     <scope>test</scope>
 </dependency>
@@ -125,13 +125,46 @@ Pick **one** module that matches your test framework and logging framework:
 ```xml
 <dependency>
     <groupId>io.github.thestacktracewhisperer</groupId>
-    <artifactId>muter-testng-jul</artifactId>
+    <artifactId>mute-testng-jul</artifactId>
     <version>1.0.0</version>
     <scope>test</scope>
 </dependency>
 ```
 
 > **Note:** Projects using Apache Commons Logging with the default JUL backend are also covered by the `jul` modules, since Commons Logging routes through `java.util.logging` in that configuration.
+
+## Contributing
+
+### License headers
+
+Every source file contains a license header managed by the
+[Mycila `license-maven-plugin`](https://github.com/mycila/license-maven-plugin).
+The markers you see inside the `/* */` comment block are **plugin control tokens** —
+they are not noise:
+
+```
+/*-
+ * #%L                          ← start of managed header
+ * <module name>                ← section 1: artifact name (auto-updated)
+ * %%                           ← section separator
+ * Copyright (C) 2026 ...       ← section 2: copyright (auto-updated)
+ * %%                           ← section separator
+ * Licensed under the Apache    ← section 3: full license text
+ * ...
+ * #L%                          ← end of managed header
+ */
+```
+
+The `%%` markers separate the three sections; `#%L` / `#L%` delimit the entire
+block so the plugin can locate and rewrite headers without duplicating them on
+every build. They are invisible to the Java/Kotlin/Groovy compilers because they
+live inside a standard block comment.
+
+To regenerate or update all headers run:
+
+```bash
+mvn license:update-file-header
+```
 
 ## Requirements
 
@@ -144,9 +177,9 @@ The following dependencies must be present on the classpath at runtime but are *
 
 | Module family     | Required dependencies             |
 |-------------------|-----------------------------------|
-| `muter-*-logback` | SLF4J 2.x, Logback Classic 1.5.x  |
-| `muter-*-log4j`   | Log4j 2 API + Core 2.x            |
-| `muter-*-jul`     | _(none — JUL is part of the JDK)_ |
-| `muter-junit5-*`  | JUnit Jupiter 5.x                 |
-| `muter-testng-*`  | TestNG 7.5+                       |
+| `mute-*-logback` | SLF4J 2.x, Logback Classic 1.5.x  |
+| `mute-*-log4j`   | Log4j 2 API + Core 2.x            |
+| `mute-*-jul`     | _(none — JUL is part of the JDK)_ |
+| `mute-junit5-*`  | JUnit Jupiter 5.x                 |
+| `mute-testng-*`  | TestNG 7.5+                       |
 
