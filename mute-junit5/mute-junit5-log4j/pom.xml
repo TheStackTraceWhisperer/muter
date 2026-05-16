@@ -22,6 +22,10 @@
       <groupId>io.github.thestacktracewhisperer</groupId>
       <artifactId>mute-junit5-core</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.github.thestacktracewhisperer</groupId>
+      <artifactId>mute-log4j</artifactId>
+    </dependency>
 
     <!-- Log4j 2 API — consumers provide their own version -->
     <dependency>

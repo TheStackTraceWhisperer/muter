@@ -15,12 +15,16 @@
   <packaging>jar</packaging>
 
   <name>mute-spock-logback</name>
-  <description>Spock 2 @Mute extension — Logback Classic implementation.</description>
+  <description>Spock 2 @Mute extension — Logback Classic (delegates to mute-logback).</description>
 
   <dependencies>
     <dependency>
       <groupId>io.github.thestacktracewhisperer</groupId>
       <artifactId>mute-spock-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.github.thestacktracewhisperer</groupId>
+      <artifactId>mute-logback</artifactId>
     </dependency>
 
     <!-- SLF4J API — consumers provide their own version -->

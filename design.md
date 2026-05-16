@@ -46,7 +46,7 @@ output.
 ## 2. Module Structure
 
 ```
-mute-core                          LogMute + MuteRestorer interfaces (shared by all)
+mute-core                          LogMute + LogRestorer interfaces (shared by all)
 │
 ├── mute-junit5/
 │   ├── mute-junit5-core           @Mute annotation, MuteExtension, JUnitMuteStateStack
@@ -93,16 +93,15 @@ public interface LogMute {
    *                      empty array means mute the ROOT logger
    * @return a command that restores all loggers to their pre-mute state
    */
-  MuteRestorer mute(Class<?>[] targetClasses);
+  LogRestorer mute(Class<?>[] targetClasses);
 }
 ```
 
-### 3.2 `MuteRestorer` — Command Interface
+### 3.2 `LogRestorer` — Command Interface
 
 ```java
-
 @FunctionalInterface
-public interface MuteRestorer {
+public interface LogRestorer {
   void restore();
 }
 ```
@@ -152,7 +151,7 @@ public @interface Mute {
 
 **Annotation lookup:** method first, then declaring class (supports class-level `@Mute`).
 
-**State management:** `JUnitMuteStateStack` stores the `MuteRestorer` in JUnit's
+**State management:** `JUnitMuteStateStack` stores the `LogRestorer` in JUnit's
 `ExtensionContext.Store` scoped to the current test method. Each test has its own store entry,
 so nested tests are safe. Note: the restorer bookkeeping is thread-isolated, but the
 underlying logger level mutation is JVM-global state — see §10 for the parallel execution caveat.
@@ -164,14 +163,14 @@ underlying logger level mutation is JVM-global state — see §10 for the parall
 MuteExtension.beforeTestExecution()
   ├── findMuteAnnotation()    ← method-level, then class-level fallback
   ├── ServiceLoader<LogMute>  ← discovers all LogMute implementations
-  ├── LogMute.mute()          ← sets loggers to OFF, returns MuteRestorer
+  ├── LogMute.mute()          ← sets loggers to OFF, returns LogRestorer
   └── JUnitMuteStateStack.push(context, restorer)
 
         ... test runs ...
 
 MuteExtension.afterTestExecution()
   └── JUnitMuteStateStack.popAndRestore(context)
-        └── MuteRestorer.restore()  ← guaranteed, even on failure
+        └── LogRestorer.restore()  ← guaranteed, even on failure
 ```
 
 ### 5.2 TestNG — `MuteListener`
@@ -183,7 +182,7 @@ configuration required.
 
 **Annotation lookup:** method first, then declaring class.
 
-**State management:** `ThreadLocal<MuteRestorer>` — one slot per thread, set in `before` and
+**State management:** `ThreadLocal<LogRestorer>` — one slot per thread, set in `before` and
 cleared in `after`. The per-thread bookkeeping is correct for parallel TestNG runs; however, the
 underlying logger level mutation is JVM-global state — see §10 for the parallel execution caveat.
 
@@ -231,7 +230,7 @@ MuteSpockExtension.visitSpecAnnotation() or visitFeatureAnnotation()
 MuteInterceptor.intercept(invocation)
   ├── LogMute.mute()
   ├── invocation.proceed()
-  └── finally: MuteRestorer.restore()   ← guaranteed
+  └── finally: LogRestorer.restore()   ← guaranteed
 ```
 
 ### 5.4 Kotest — `MuteKotestListener`
@@ -244,7 +243,7 @@ and registers all `@AutoScan`-annotated listeners globally. No user configuratio
 **When to mute:** The listener checks whether the spec class (not the individual test) carries
 `@Mute`. Because Kotest tests are lambdas, the spec class is the only annotation target.
 
-**State management:** `ConcurrentHashMap<Object, MuteRestorer>` keyed by the `TestCase` instance,
+**State management:** `ConcurrentHashMap<Object, LogRestorer>` keyed by the `TestCase` instance,
 which is stable and unique per test execution. The bookkeeping is coroutine-safe, but the
 underlying logger level mutation is JVM-global state — see §10 for the parallel execution caveat.
 
@@ -272,7 +271,7 @@ All implementations follow the same pattern regardless of framework or backend:
 1. Resolve the active logger context / manager.
 2. Collect current levels for the target loggers (or the root logger if `targetClasses` is empty).
 3. Set each level to `OFF`.
-4. Return a `MuteRestorer` lambda that restores all collected levels.
+4. Return a `LogRestorer` lambda that restores all collected levels.
 
 ### 6.1 Logback — `LogbackMute`
 
@@ -280,7 +279,7 @@ Resolves `org.slf4j.LoggerFactory.getILoggerFactory()` and casts to `LoggerConte
 `IllegalStateException` if Logback is not the bound SLF4J provider.
 
 ```java
-MuteRestorer mute(Class<?>[] targetClasses) {
+LogRestorer mute(Class<?>[] targetClasses) {
   LoggerContext ctx = (LoggerContext) loggerFactorySupplier.get();
   Map<Logger, Level> saved = new HashMap<>();
   // ... collect and set OFF ...

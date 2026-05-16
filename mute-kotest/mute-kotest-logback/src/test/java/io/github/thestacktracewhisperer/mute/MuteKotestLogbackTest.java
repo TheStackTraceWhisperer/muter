@@ -100,7 +100,7 @@ class MuteKotestLogbackTest {
     LogbackMute mute = new LogbackMute(() -> new Object());
     IllegalStateException ex = assertThrows(IllegalStateException.class, () -> mute.mute(new Class<?>[0]));
     assertEquals(
-      "mute-kotest-logback requires Logback Classic on the classpath; found: java.lang.Object",
+      "mute-logback requires Logback Classic on the classpath; found: java.lang.Object",
       ex.getMessage());
   }
 
@@ -110,7 +110,7 @@ class MuteKotestLogbackTest {
     LogbackMute mute = new LogbackMute(() -> null);
     IllegalStateException ex = assertThrows(IllegalStateException.class, () -> mute.mute(new Class<?>[0]));
     assertEquals(
-      "mute-kotest-logback requires Logback Classic on the classpath; found: null",
+      "mute-logback requires Logback Classic on the classpath; found: null",
       ex.getMessage());
   }
 

@@ -22,6 +22,10 @@
       <groupId>io.github.thestacktracewhisperer</groupId>
       <artifactId>mute-junit5-core</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.github.thestacktracewhisperer</groupId>
+      <artifactId>mute-jul</artifactId>
+    </dependency>
 
     <!-- JUnit 5 API — consumers provide their own version -->
     <dependency>

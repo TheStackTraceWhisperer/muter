@@ -20,7 +20,7 @@ package io.github.thestacktracewhisperer.mute;
  * #L%
  */
 
-import org.spockframework.runtime.extension.IAnnotationDrivenExtension;
+import org.spockframework.runtime.extension.IGlobalExtension;
 import org.spockframework.runtime.model.FeatureInfo;
 import org.spockframework.runtime.model.SpecInfo;
 
@@ -30,40 +30,50 @@ import java.util.List;
 import java.util.ServiceLoader;
 
 /**
- * Spock 2 extension registered by {@link Mute} via {@code @ExtensionAnnotation}.
- * Delegates the actual logger manipulation to all {@link LogMute} implementations
- * found on the classpath via {@link ServiceLoader}.
+ * Spock 2 global extension registered via
+ * {@code META-INF/services/org.spockframework.runtime.extension.IGlobalExtension}.
  *
- * <p>{@link Mute} may be placed on a feature method <em>or</em> on a specification class.
- * When placed on a class the annotation applies to every feature in that specification.
+ * <p>Visits every specification at startup and attaches {@link MuteInterceptor}s to
+ * feature methods that are annotated with {@link Mute} (either directly or inherited
+ * from the enclosing specification class).
+ *
+ * <p>Switching to {@link IGlobalExtension} (instead of the previous
+ * {@code IAnnotationDrivenExtension}) removes the dependency on
+ * {@code @ExtensionAnnotation} and allows {@link Mute} to live in {@code mute-core}
+ * without any Spock-specific meta-annotation — making it safe to mix Spock and JUnit 5
+ * on the same classpath.
  *
  * <p>At least one {@code LogMute} implementation must be present on the test classpath
- * (e.g., mute-spock-logback, mute-spock-log4j, or mute-spock-jul); otherwise an
- * {@link IllegalStateException} is thrown when the first {@link Mute}-annotated feature runs.
+ * (e.g., mute-logback, mute-log4j, or mute-jul); otherwise an
+ * {@link IllegalStateException} is thrown when the first {@link Mute}-annotated
+ * feature runs.
  */
-public class MuteSpockExtension implements IAnnotationDrivenExtension<Mute> {
+public class MuteSpockExtension implements IGlobalExtension {
 
   /**
-   * Public constructor required by Spock's annotation-driven extension mechanism.
+   * Public no-arg constructor required by the {@link ServiceLoader} mechanism.
    */
   public MuteSpockExtension() {
   }
 
   @Override
-  public void visitSpecAnnotation(Mute annotation, SpecInfo spec) {
+  public void visitSpec(SpecInfo spec) {
     List<LogMute> logMutes = loadLogMutes();
+    Mute specAnnotation = spec.getReflection().getAnnotation(Mute.class);
+
     for (FeatureInfo feature : spec.getFeatures()) {
-      if (feature.getFeatureMethod().getReflection().getAnnotation(Mute.class) == null) {
+      Mute featureAnnotation = feature.getFeatureMethod().getReflection().getAnnotation(Mute.class);
+
+      if (featureAnnotation != null) {
+        // Feature-level @Mute takes precedence
         feature.getFeatureMethod().addInterceptor(
-          new MuteInterceptor(annotation.classes(), logMutes));
+          new MuteInterceptor(featureAnnotation.classes(), logMutes));
+      } else if (specAnnotation != null) {
+        // Fall back to spec-level @Mute
+        feature.getFeatureMethod().addInterceptor(
+          new MuteInterceptor(specAnnotation.classes(), logMutes));
       }
     }
-  }
-
-  @Override
-  public void visitFeatureAnnotation(Mute annotation, FeatureInfo feature) {
-    feature.getFeatureMethod().addInterceptor(
-      new MuteInterceptor(annotation.classes(), loadLogMutes()));
   }
 
   private static List<LogMute> loadLogMutes() {

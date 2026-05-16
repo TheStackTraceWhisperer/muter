@@ -44,9 +44,9 @@ class MuteInterceptor implements IMethodInterceptor {
   @Override
   public void intercept(IMethodInvocation invocation) throws Throwable {
     if (logMutes.isEmpty()) {
-      throw new IllegalStateException(
+        throw new IllegalStateException(
         "No LogMute found on the classpath. "
-          + "Add mute-spock-logback, mute-spock-log4j, or mute-spock-jul "
+          + "Add mute-logback, mute-log4j, or mute-jul "
           + "to your test dependencies.");
     }
     List<LogRestorer> restorers = new ArrayList<>(logMutes.size());

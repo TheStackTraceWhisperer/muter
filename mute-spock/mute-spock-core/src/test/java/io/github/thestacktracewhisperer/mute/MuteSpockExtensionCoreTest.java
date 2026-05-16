@@ -22,7 +22,7 @@ package io.github.thestacktracewhisperer.mute;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.spockframework.runtime.extension.ExtensionAnnotation;
+import org.spockframework.runtime.extension.IGlobalExtension;
 import org.spockframework.runtime.extension.IMethodInvocation;
 
 import java.lang.reflect.Proxy;
@@ -39,12 +39,17 @@ import static org.junit.jupiter.api.Assertions.*;
 class MuteSpockExtensionCoreTest {
 
   @Test
-  @DisplayName("@Mute annotation is properly configured with @ExtensionAnnotation")
-  void muteAnnotationHasExtensionAnnotation() {
-    ExtensionAnnotation extensionAnnotation = Mute.class.getAnnotation(ExtensionAnnotation.class);
-    assertNotNull(extensionAnnotation, "@Mute should be annotated with @ExtensionAnnotation");
-    assertEquals(MuteSpockExtension.class, extensionAnnotation.value(),
-      "@ExtensionAnnotation should reference MuteSpockExtension.class");
+  @DisplayName("MuteSpockExtension is registered as an IGlobalExtension via ServiceLoader SPI")
+  void muteSpockExtensionIsRegisteredAsGlobalExtension() {
+    boolean found = false;
+    for (IGlobalExtension ext : java.util.ServiceLoader.load(IGlobalExtension.class)) {
+      if (ext instanceof MuteSpockExtension) {
+        found = true;
+        break;
+      }
+    }
+    assertTrue(found,
+      "MuteSpockExtension should be discoverable via ServiceLoader<IGlobalExtension>");
   }
 
   @Test

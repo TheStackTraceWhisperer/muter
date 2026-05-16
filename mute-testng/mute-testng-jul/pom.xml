@@ -22,6 +22,10 @@
       <groupId>io.github.thestacktracewhisperer</groupId>
       <artifactId>mute-testng-core</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.github.thestacktracewhisperer</groupId>
+      <artifactId>mute-jul</artifactId>
+    </dependency>
 
     <!-- TestNG — consumers provide their own version; also needed to run fixture tests -->
     <dependency>

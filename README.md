@@ -13,37 +13,11 @@ other log-noisy paths, keeping CI console output clean without XML configuration
 This is a multimodule Maven project. Choose the module that matches your **test framework** and
 **logging framework**:
 
-### JUnit 5
-
-| Module                | Logging framework   |
-|-----------------------|---------------------|
-| `mute-junit5-logback` | Logback             |
-| `mute-junit5-log4j`   | Apache Log4j 2      |
-| `mute-junit5-jul`     | `java.util.logging` |
-
-### TestNG
-
-| Module                | Logging framework   |
-|-----------------------|---------------------|
-| `mute-testng-logback` | Logback             |
-| `mute-testng-log4j`   | Apache Log4j 2      |
-| `mute-testng-jul`     | `java.util.logging` |
-
-### Spock 2
-
-| Module               | Logging framework   |
-|----------------------|---------------------|
-| `mute-spock-logback` | Logback             |
-| `mute-spock-log4j`   | Apache Log4j 2      |
-| `mute-spock-jul`     | `java.util.logging` |
-
-### Kotest
-
-| Module                | Logging framework   |
-|-----------------------|---------------------|
-| `mute-kotest-logback` | Logback             |
-| `mute-kotest-log4j`   | Apache Log4j 2      |
-| `mute-kotest-jul`     | `java.util.logging` |
+| Logging backend     | JUnit 5               | TestNG                | Spock 2              | Kotest                |
+|---------------------|-----------------------|-----------------------|----------------------|-----------------------|
+| Logback             | `mute-junit5-logback` | `mute-testng-logback` | `mute-spock-logback` | `mute-kotest-logback` |
+| Apache Log4j 2      | `mute-junit5-log4j`   | `mute-testng-log4j`   | `mute-spock-log4j`   | `mute-kotest-log4j`   |
+| `java.util.logging` | `mute-junit5-jul`     | `mute-testng-jul`     | `mute-spock-jul`     | `mute-kotest-jul`     |
 
 The `mute-core`, `mute-*-core` modules are shared dependencies pulled in automatically as
 transitive deps; you do not need to declare them explicitly.

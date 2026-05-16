@@ -93,10 +93,11 @@
                 </rule>
               </rules>
               <!--
-                MuteSpockExtension is a thin Spock extension entry-point (visitFeatureAnnotation /
-                visitSpecAnnotation). It delegates immediately to MuteInterceptor (well-tested here)
-                and can only be exercised by a full Groovy/Spock runtime, which is available in the
-                downstream integration modules (mute-spock-logback, -log4j, -jul).
+                MuteSpockExtension.visitSpec is a thin Spock extension entry-point.
+                It delegates immediately to MuteInterceptor (well-tested here) and
+                can only be exercised by a full Groovy/Spock runtime, which is
+                available in the downstream integration modules (mute-spock-logback,
+                -log4j, -jul).
               -->
               <excludes>
                 <exclude>**/MuteSpockExtension.class</exclude>

@@ -104,7 +104,7 @@ public class MuteKotestListener implements BeforeEachListener, AfterEachListener
     if (logMutes.isEmpty()) {
       throw new IllegalStateException(
         "No LogMute found on the classpath. "
-          + "Add mute-kotest-logback, mute-kotest-log4j, or mute-kotest-jul "
+          + "Add mute-logback, mute-log4j, or mute-jul "
           + "to your test dependencies.");
     }
     List<LogRestorer> restorers = new ArrayList<>(logMutes.size());

@@ -73,7 +73,7 @@ public class MuteListener implements IInvokedMethodListener {
       if (logMutes.isEmpty()) {
         throw new IllegalStateException(
           "No LogMute found on the classpath. "
-            + "Add mute-testng-logback, mute-testng-log4j, or mute-testng-jul "
+            + "Add mute-logback, mute-log4j, or mute-jul "
             + "to your test dependencies.");
       }
       List<LogRestorer> restorers = new ArrayList<>(logMutes.size());

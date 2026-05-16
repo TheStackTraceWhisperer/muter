@@ -16,6 +16,20 @@
   <name>mute-core</name>
   <description>Core logging-mute interfaces shared by all mute framework modules.</description>
 
+  <dependencies>
+    <!--
+      JUnit 5 API — needed to compile MuteExtension, JUnitMuteStateStack, and the
+      @ExtendWith meta-annotation on @Mute. Marked optional so that non-JUnit-5
+      consumers (TestNG, Spock, Kotest) do not receive JUnit 5 transitively.
+    -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>compile</scope>
+      <optional>true</optional>
+    </dependency>
+  </dependencies>
+
   <build>
     <plugins>
       <plugin>

@@ -17,6 +17,7 @@
 
   <modules>
     <module>mute-core</module>
+    <module>mute-backends</module>
     <module>mute-junit5</module>
     <module>mute-testng</module>
     <module>mute-spock</module>
@@ -72,6 +73,22 @@
       <dependency>
         <groupId>io.github.thestacktracewhisperer</groupId>
         <artifactId>mute-core</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <!-- Framework-agnostic backend modules -->
+      <dependency>
+        <groupId>io.github.thestacktracewhisperer</groupId>
+        <artifactId>mute-logback</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.thestacktracewhisperer</groupId>
+        <artifactId>mute-log4j</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.thestacktracewhisperer</groupId>
+        <artifactId>mute-jul</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

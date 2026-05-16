@@ -131,7 +131,7 @@ class MuteListenerLogbackTest {
     IllegalStateException exception =
       assertThrows(IllegalStateException.class, () -> mute.mute(new Class<?>[0]));
     assertEquals(
-      "mute-testng-logback requires Logback Classic on the classpath; found: java.lang.Object",
+      "mute-logback requires Logback Classic on the classpath; found: java.lang.Object",
       exception.getMessage());
   }
 
@@ -143,7 +143,7 @@ class MuteListenerLogbackTest {
     IllegalStateException exception =
       assertThrows(IllegalStateException.class, () -> mute.mute(new Class<?>[0]));
     assertEquals(
-      "mute-testng-logback requires Logback Classic on the classpath; found: null",
+      "mute-logback requires Logback Classic on the classpath; found: null",
       exception.getMessage());
   }
 

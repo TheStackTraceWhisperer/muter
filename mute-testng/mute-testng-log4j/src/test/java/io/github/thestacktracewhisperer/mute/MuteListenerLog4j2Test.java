@@ -158,7 +158,7 @@ class MuteListenerLog4j2Test {
     Log4j2Mute mute = new Log4j2Mute(() -> "not-a-log4j-context");
     IllegalStateException ex = assertThrows(IllegalStateException.class,
       () -> mute.mute(new Class<?>[0]));
-    assertTrue(ex.getMessage().contains("mute-testng-log4j"),
+    assertTrue(ex.getMessage().contains("mute-log4j"),
       "error message should mention the module name");
   }
 

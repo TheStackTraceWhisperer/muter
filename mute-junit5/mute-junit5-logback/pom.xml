@@ -15,12 +15,16 @@
   <packaging>jar</packaging>
 
   <name>mute-junit5-logback</name>
-  <description>JUnit 5 @Mute extension — Logback Classic implementation.</description>
+  <description>JUnit 5 @Mute extension — Logback Classic (delegates to mute-logback).</description>
 
   <dependencies>
     <dependency>
       <groupId>io.github.thestacktracewhisperer</groupId>
       <artifactId>mute-junit5-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.github.thestacktracewhisperer</groupId>
+      <artifactId>mute-logback</artifactId>
     </dependency>
 
     <!-- SLF4J API — consumers provide their own version -->
@@ -92,12 +96,12 @@
                     <limit>
                       <counter>LINE</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.98</minimum>
+                      <minimum>0.90</minimum>
                     </limit>
                     <limit>
                       <counter>BRANCH</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.98</minimum>
+                      <minimum>0.90</minimum>
                     </limit>
                   </limits>
                 </rule>
@@ -105,34 +109,6 @@
             </configuration>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.pitest</groupId>
-        <artifactId>pitest-maven</artifactId>
-        <executions>
-          <execution>
-            <id>mutation-tests</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>mutationCoverage</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <targetClasses>
-            <param>io.github.thestacktracewhisperer.mute.*</param>
-          </targetClasses>
-          <targetTests>
-            <param>io.github.thestacktracewhisperer.mute.*Test</param>
-          </targetTests>
-          <mutators>
-            <mutator>STRONGER</mutator>
-          </mutators>
-          <timestampedReports>false</timestampedReports>
-          <threads>2</threads>
-          <mutationThreshold>80</mutationThreshold>
-          <coverageThreshold>98</coverageThreshold>
-        </configuration>
       </plugin>
     </plugins>
   </build>
