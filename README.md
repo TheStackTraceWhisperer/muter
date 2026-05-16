@@ -1,4 +1,4 @@
-# mute
+# Mute
 
 A JUnit 5 and TestNG extension that declaratively silences logging noise during test execution.
 
