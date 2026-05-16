@@ -6,21 +6,35 @@
 
   <parent>
     <groupId>io.github.thestacktracewhisperer</groupId>
-    <artifactId>mute-backends</artifactId>
+    <artifactId>mute</artifactId>
     <version>${revision}</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>mute-jul</artifactId>
+  <artifactId>mute-log4j</artifactId>
   <packaging>jar</packaging>
 
-  <name>mute-jul</name>
-  <description>Framework-agnostic @Mute backend — java.util.logging (JUL) implementation.</description>
+  <name>mute-log4j</name>
+  <description>Framework-agnostic @Mute backend — Apache Log4j 2 implementation.</description>
 
   <dependencies>
     <dependency>
       <groupId>io.github.thestacktracewhisperer</groupId>
       <artifactId>mute-core</artifactId>
+    </dependency>
+
+    <!-- Log4j 2 API — consumers provide their own version -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Log4j 2 Core — consumers provide their own version -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <scope>provided</scope>
     </dependency>
 
     <!-- JUnit 5 Engine (needed to run unit tests via Surefire) -->

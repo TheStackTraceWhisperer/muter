@@ -17,7 +17,9 @@
 
   <modules>
     <module>mute-core</module>
-    <module>mute-backends</module>
+    <module>mute-logback</module>
+    <module>mute-log4j</module>
+    <module>mute-jul</module>
     <module>mute-junit5</module>
     <module>mute-testng</module>
     <module>mute-spock</module>
