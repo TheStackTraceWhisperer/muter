@@ -1,265 +1,340 @@
-# @Mute JUnit 5 Extension: Technical Specification
-## 1. Overview
-### 1.1 Purpose
-The @Mute extension provides a declarative, programmatic mechanism to temporarily disable logging output during specific JUnit 5 test executions. It is designed to silence the "expected exception" noise that pollutes Continuous Integration (CI) console logs, without requiring complex XML configurations or heavy framework-specific application contexts.
-### 1.2 Architectural Goals
- * **Locality of Behavior:** Muting configuration must live directly on the test method.
- * **Performance:** Muting must short-circuit log generation before string formatting or event allocation occurs.
- * **State Safety:** Original logging levels must be guaranteed to restore regardless of test outcome (Pass/Fail/Error).
- * **SOLID Principles:** The JUnit framework mechanics must be decoupled from the specific underlying logging implementation (e.g., Logback).
-## 2. Technical Specification
-### 2.1 Framework Dependencies
- * **Testing:** JUnit Jupiter API (JUnit 5) org.junit.jupiter.api.extension.*
- * **Logging API:** SLF4J org.slf4j.*
- * **Logging Implementation:** Logback Classic ch.qos.logback.classic.*
-### 2.2 Lifecycle Integration
-The extension hooks into the JUnit 5 test lifecycle using two specific interfaces:
- 1. BeforeTestExecutionCallback: Executes immediately before the test method is invoked. Used to capture current log levels, push them to a state stack, and apply Level.OFF.
- 2. AfterTestExecutionCallback: Executes immediately after the test method completes. Used to pop the state stack and restore the original Level.
-### 2.3 State Management
-Because JUnit 5 test instances share static logger singletons, state management must be precise to prevent permanent log suppression.
- * **Storage:** State is stored in JUnit's ExtensionContext.Store.
- * **Scope:** Using context.getRoot().getStore() ensures the stack survives throughout nested test lifecycles.
- * **Namespace:** Isolated via Namespace.create(MuteExtension.class) to prevent key collisions with other extensions.
- * **Data Structure:** A Deque (Stack) is utilized to manage state, allowing nested tests to push and pop their specific environmental mutations sequentially.
-## 3. Implementation Code
-### 3.1 The Annotation (@Mute)
-Acts as a meta-annotation by automatically registering the extension via @ExtendWith.
-```java
-import org.junit.jupiter.api.extension.ExtendWith;
-import java.lang.annotation.*;
+# @Mute: Technical Design
 
-@Target({ElementType.METHOD, ElementType.TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-@ExtendWith(MuteExtension.class)
-public @interface Mute {
-    /**
-     * Specify which classes' loggers should be muted.
-     * If left empty, it will mute the ROOT logger.
-     */
-    Class<?>[] classes() default {};
-}
+## 1. Overview
+
+### 1.1 Purpose
+
+`@Mute` is a multi-framework test extension that declaratively silences logging noise during test
+execution. It is designed to suppress the "expected exception" log spam that pollutes CI console
+output.
+
+### 1.2 Supported Frameworks
+
+| Test framework | Integration mechanism          | Auto-registration                                |
+|----------------|-------------------------------|--------------------------------------------------|
+| JUnit 5        | `BeforeTestExecutionCallback` / `AfterTestExecutionCallback` | `@ExtendWith` on `@Mute` itself |
+| TestNG         | `IInvokedMethodListener`       | `META-INF/services/org.testng.ITestNGListener`   |
+| Spock 2        | `IAnnotationDrivenExtension` + `IMethodInterceptor` | `@ExtensionAnnotation` on `@Mute` itself |
+| Kotest         | `BeforeEachListener` / `AfterEachListener` | `@AutoScan` on listener class          |
+
+### 1.3 Supported Logging Backends
+
+`LogMute` implementations are provided for:
+
+| Backend               | Module suffix   | Implementation class |
+|-----------------------|-----------------|----------------------|
+| Logback       | `-logback`      | `LogbackMute`        |
+| Apache Log4j 2        | `-log4j`        | `Log4j2Mute`         |
+| `java.util.logging`   | `-jul`          | `JulMute`            |
+
+### 1.4 Architectural Goals
+
+- **Locality of Behaviour:** Muting configuration lives directly on the test method or class.
+- **Performance:** All three implementations set the targeted logger(s) to `OFF` at the logger object itself, so the framework's enabled check (`isEnabledFor` / `isEnabled` / `isLoggable`) rejects every call before parameter substitution or appender/handler I/O occurs. Note: eager Java string concatenation in caller code (e.g. `logger.warn("x=" + x)`) is evaluated by the JVM before the logger method is invoked and is unaffected — use parameterized logging (e.g. `logger.warn("x={}", x)`) to avoid that cost.
+- **State Safety:** Original log levels are restored after every test regardless of outcome.
+- **SOLID / DIP:** Test-framework mechanics are fully decoupled from logging-framework mechanics
+  via the `LogMute` strategy interface and `ServiceLoader` discovery.
+- **Zero Configuration:** No XML, no `testng.xml`, no `@Listeners`. Drop in the dependency and
+  annotate.
+
+---
+
+## 2. Module Structure
 
 ```
-### 3.2 The Command Interface (MuteRestorer)
-Provides a decoupled execution trigger for the JUnit extension to reverse the mute operation.
+mute-core                          LogMute + MuteRestorer interfaces (shared by all)
+│
+├── mute-junit5/
+│   ├── mute-junit5-core           @Mute annotation, MuteExtension, JUnitMuteStateStack
+│   ├── mute-junit5-logback        LogbackMute  (SPI registration)
+│   ├── mute-junit5-log4j          Log4j2Mute   (SPI registration)
+│   └── mute-junit5-jul            JulMute      (SPI registration)
+│
+├── mute-testng/
+│   ├── mute-testng-core           @Mute annotation, MuteListener
+│   ├── mute-testng-logback        LogbackMute  (SPI registration)
+│   ├── mute-testng-log4j          Log4j2Mute   (SPI registration)
+│   └── mute-testng-jul            JulMute      (SPI registration)
+│
+├── mute-spock/
+│   ├── mute-spock-core            @Mute annotation, MuteSpockExtension, MuteInterceptor
+│   ├── mute-spock-logback         LogbackMute  (SPI registration)
+│   ├── mute-spock-log4j           Log4j2Mute   (SPI registration)
+│   └── mute-spock-jul             JulMute      (SPI registration)
+│
+└── mute-kotest/
+    ├── mute-kotest-core           @Mute annotation, MuteKotestListener
+    ├── mute-kotest-logback        LogbackMute  (SPI registration)
+    ├── mute-kotest-log4j          Log4j2Mute   (SPI registration)
+    └── mute-kotest-jul            JulMute      (SPI registration)
+```
+
+Each leaf module (e.g. `mute-junit5-logback`) registers its `LogMute` implementation via
+`META-INF/services/io.github.thestacktracewhisperer.mute.LogMute`. The test-framework core
+modules discover implementations at runtime using `ServiceLoader`, so adding a single
+dependency is sufficient to wire everything together.
+
+---
+
+## 3. Core Abstractions (`mute-core`)
+
+### 3.1 `LogMute` — Strategy Interface
+
+```java
+public interface LogMute {
+    /**
+     * Mutes the loggers for the specified target classes.
+     *
+     * @param targetClasses classes whose loggers should be muted;
+     *                      empty array means mute the ROOT logger
+     * @return a command that restores all loggers to their pre-mute state
+     */
+    MuteRestorer mute(Class<?>[] targetClasses);
+}
+```
+
+### 3.2 `MuteRestorer` — Command Interface
+
 ```java
 @FunctionalInterface
 public interface MuteRestorer {
     void restore();
 }
-
 ```
-### 3.3 The Logging Abstraction (LogMute)
-Inverts the dependency so the extension does not rely directly on Logback.
+
+The Command pattern keeps restoration logic encapsulated inside the implementation that created
+it; callers never need to know anything about the underlying logging API.
+
+---
+
+## 4. The `@Mute` Annotation
+
+Each framework family has its own copy of `@Mute` in its `*-core` module because each requires a
+different meta-annotation to hook into its framework's extension mechanism.
+
+| Framework | Meta-annotation on `@Mute`          |
+|-----------|-------------------------------------|
+| JUnit 5   | `@ExtendWith(MuteExtension.class)`  |
+| TestNG    | _(none — listener self-registers via SPI)_ |
+| Spock 2   | `@ExtensionAnnotation(MuteSpockExtension.class)` |
+| Kotest    | _(none — listener self-registers via `@AutoScan`)_ |
+
+All variants share the same user-facing contract:
+
 ```java
-public interface LogMute {
+@Target({ElementType.METHOD, ElementType.TYPE})   // TYPE only for Kotest
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Mute {
     /**
-     * Mutes the loggers specified in the annotation.
-     * @return A command to restore the loggers to their original state.
+     * Classes whose loggers should be muted.
+     * Leave empty to mute the ROOT logger.
      */
-    MuteRestorer mute(Mute annotation);
+    Class<?>[] classes() default {};
 }
+```
+
+> **Kotest note:** `@Mute` targets `ElementType.TYPE` only. Kotest tests are lambdas inside a
+> spec class, not discrete methods, so the spec class is the natural annotation target.
+
+---
+
+## 5. Framework Integrations
+
+### 5.1 JUnit 5 — `MuteExtension`
+
+**Lifecycle hooks:** `BeforeTestExecutionCallback`, `AfterTestExecutionCallback`
+
+**Annotation lookup:** method first, then declaring class (supports class-level `@Mute`).
+
+**State management:** `JUnitMuteStateStack` stores the `MuteRestorer` in JUnit's
+`ExtensionContext.Store` scoped to the current test method. Each test has its own store entry,
+so nested tests and parallel execution are both safe.
 
 ```
-### 3.4 The Logback Implementation (LogbackMute)
-Handles the direct manipulation of the ch.qos.logback API.
+@Mute on method / class
+        │
+        ▼
+MuteExtension.beforeTestExecution()
+  ├── findMuteAnnotation()    ← method-level, then class-level fallback
+  ├── ServiceLoader<LogMute>  ← discovers all LogMute implementations
+  ├── LogMute.mute()          ← sets loggers to OFF, returns MuteRestorer
+  └── JUnitMuteStateStack.push(context, restorer)
+
+        ... test runs ...
+
+MuteExtension.afterTestExecution()
+  └── JUnitMuteStateStack.popAndRestore(context)
+        └── MuteRestorer.restore()  ← guaranteed, even on failure
+```
+
+### 5.2 TestNG — `MuteListener`
+
+**Lifecycle hooks:** `IInvokedMethodListener.beforeInvocation` / `afterInvocation`
+
+**Registration:** SPI file `META-INF/services/org.testng.ITestNGListener` — no user
+configuration required.
+
+**Annotation lookup:** method first, then declaring class.
+
+**State management:** `ThreadLocal<MuteRestorer>` — one slot per thread, set in `before` and
+cleared in `after`. This is correct for both single-threaded and parallel TestNG runs.
+
+```
+@Mute on method / class
+        │
+        ▼
+MuteListener.beforeInvocation()
+  ├── Guards: isTestMethod() only
+  ├── findMuteAnnotation()    ← method-level, then class-level fallback
+  ├── LogMute.mute()
+  └── ThreadLocal.set(restorer)
+
+        ... test runs ...
+
+MuteListener.afterInvocation()
+  └── ThreadLocal.get() → restorer.restore() → ThreadLocal.remove()
+```
+
+### 5.3 Spock 2 — `MuteSpockExtension` + `MuteInterceptor`
+
+**Integration point:** `IAnnotationDrivenExtension<Mute>` — Spock calls `visitSpecAnnotation`
+and `visitFeatureAnnotation` at spec initialisation time (not at test execution time).
+
+**Registration:** `@ExtensionAnnotation(MuteSpockExtension.class)` on `@Mute` — Spock discovers
+this automatically.
+
+**Class-level behaviour:** `visitSpecAnnotation` iterates all features in the spec and attaches
+a `MuteInterceptor` to each feature method that does not already carry its own `@Mute`
+(preventing double-muting).
+
+**State management:** `MuteInterceptor` holds the mute/restore logic in a standard
+`try/finally` block around `invocation.proceed()`. No external state store is needed —
+each interceptor invocation is self-contained.
+
+```
+@Mute on spec / feature
+        │
+        ▼ (at initialisation time)
+MuteSpockExtension.visitSpecAnnotation() or visitFeatureAnnotation()
+  └── feature.addInterceptor(new MuteInterceptor(classes, logMutes))
+
+        ... feature runs ...
+
+MuteInterceptor.intercept(invocation)
+  ├── LogMute.mute()
+  ├── invocation.proceed()
+  └── finally: MuteRestorer.restore()   ← guaranteed
+```
+
+### 5.4 Kotest — `MuteKotestListener`
+
+**Lifecycle hooks:** `BeforeEachListener`, `AfterEachListener`
+
+**Registration:** `@AutoScan` on `MuteKotestListener` — Kotest scans the classpath at startup
+and registers all `@AutoScan`-annotated listeners globally. No user configuration required.
+
+**When to mute:** The listener checks whether the spec class (not the individual test) carries
+`@Mute`. Because Kotest tests are lambdas, the spec class is the only annotation target.
+
+**State management:** `ConcurrentHashMap<Object, MuteRestorer>` keyed by the `TestCase` instance,
+which is stable and unique per test execution. This is safe for Kotest's coroutine-based parallel
+execution model.
+
+```
+@Mute on spec class
+        │
+        ▼
+MuteKotestListener.beforeEach(testCase)
+  ├── spec class → getAnnotation(Mute.class)
+  ├── LogMute.mute()
+  └── restorerHolder.put(testCase, restorer)
+
+        ... test runs (possibly on a different thread/coroutine) ...
+
+MuteKotestListener.afterEach(testCase)
+  └── restorerHolder.remove(testCase) → restorer.restore()
+```
+
+---
+
+## 6. Logging Backend Implementations
+
+All implementations follow the same pattern regardless of framework or backend:
+
+1. Resolve the active logger context / manager.
+2. Collect current levels for the target loggers (or the root logger if `targetClasses` is empty).
+3. Set each level to `OFF`.
+4. Return a `MuteRestorer` lambda that restores all collected levels.
+
+### 6.1 Logback — `LogbackMute`
+
+Resolves `org.slf4j.LoggerFactory.getILoggerFactory()` and casts to `LoggerContext`. Throws
+`IllegalStateException` if Logback is not the bound SLF4J provider.
+
 ```java
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import org.slf4j.LoggerFactory;
-import java.util.HashMap;
-import java.util.Map;
-
-public class LogbackMute implements LogMute {
-
-    @Override
-    public MuteRestorer mute(Mute annotation) {
-        Map<Logger, Level> originalLevels = new HashMap<>();
-
-        if (annotation.classes().length == 0) {
-            muteRoot(originalLevels);
-        } else {
-            muteClasses(annotation.classes(), originalLevels);
-        }
-
-        // Return the Command to undo these specific mutations
-        return () -> originalLevels.forEach(Logger::setLevel);
-    }
-
-    private void muteRoot(Map<Logger, Level> state) {
-        Logger rootLogger = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
-        state.put(rootLogger, rootLogger.getLevel());
-        rootLogger.setLevel(Level.OFF);
-    }
-
-    private void muteClasses(Class<?>[] classes, Map<Logger, Level> state) {
-        for (Class<?> clazz : classes) {
-            Logger logger = (Logger) LoggerFactory.getLogger(clazz);
-            state.put(logger, logger.getLevel());
-            logger.setLevel(Level.OFF);
-        }
-    }
+MuteRestorer mute(Class<?>[] targetClasses) {
+    LoggerContext ctx = (LoggerContext) loggerFactorySupplier.get();
+    Map<Logger, Level> saved = new HashMap<>();
+    // ... collect and set OFF ...
+    return () -> saved.forEach(Logger::setLevel);
 }
-
 ```
-### 3.5 The State Manager (JUnitMuteStateStack)
-Isolates the boilerplate required to interact with JUnit 5's internal ExtensionContext.Store.
-```java
-import org.junit.jupiter.api.extension.ExtensionContext;
-import java.util.ArrayDeque;
-import java.util.Deque;
 
-public class JUnitMuteStateStack {
-    
-    private static final ExtensionContext.Namespace NAMESPACE = 
-            ExtensionContext.Namespace.create(MuteExtension.class);
-    private static final String STACK_KEY = "muteRestorerStack";
+### 6.2 Log4j 2 — `Log4j2Mute`
 
-    @SuppressWarnings("unchecked")
-    public void push(ExtensionContext context, MuteRestorer restorer) {
-        Deque<MuteRestorer> stack = context.getRoot()
-                .getStore(NAMESPACE)
-                .getOrComputeIfAbsent(STACK_KEY, k -> new ArrayDeque<>(), Deque.class);
-        stack.push(restorer);
-    }
+Resolves loggers via `LogManager.getLogger()` and manipulates levels through Log4j 2's
+`Configurator.setLevel()` API.
 
-    @SuppressWarnings("unchecked")
-    public void popAndRestore(ExtensionContext context) {
-        Deque<MuteRestorer> stack = context.getRoot()
-                .getStore(NAMESPACE)
-                .get(STACK_KEY, Deque.class);
+### 6.3 JUL — `JulMute`
 
-        if (stack != null && !stack.isEmpty()) {
-            stack.pop().restore(); 
-        }
-    }
-}
+Resolves loggers via `java.util.logging.Logger.getLogger()`. The root logger name is
+`""` (empty string). Levels are saved and restored via `Logger.getLevel()` /
+`Logger.setLevel()`.
 
-```
-### 3.6 The Orchestrator (MuteExtension)
-The main entry point registered by JUnit. It delegates work between the LogMute and the JUnitMuteStateStack.
-```java
-import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
-import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
-import org.junit.jupiter.api.extension.ExtensionContext;
+---
 
-public class MuteExtension implements BeforeTestExecutionCallback, AfterTestExecutionCallback {
+## 7. Class-Level `@Mute`
 
-    private final LogMute logMute = new LogbackMute();
-    private final JUnitMuteStateStack stateStack = new JUnitMuteStateStack();
+All four frameworks support `@Mute` at the class/spec level. The annotation applies to every
+test in that class — useful when an entire test class exercises noisy paths.
 
-    @Override
-    public void beforeTestExecution(ExtensionContext context) {
-        context.getElement()
-               .map(element -> element.getAnnotation(Mute.class))
-               .ifPresent(annotation -> {
-                   MuteRestorer restorer = logMute.mute(annotation);
-                   stateStack.push(context, restorer);
-               });
-    }
+| Framework | Class-level mechanism |
+|-----------|-----------------------|
+| JUnit 5   | `findMuteAnnotation()` falls back from method to `context.getRequiredTestClass()` |
+| TestNG    | `findMuteAnnotation()` falls back from method reflection to `testClass.getRealClass()` |
+| Spock 2   | `visitSpecAnnotation()` adds interceptors to all features at spec initialisation time |
+| Kotest    | Only class-level is supported (`@Target(ElementType.TYPE)` only) |
 
-    @Override
-    public void afterTestExecution(ExtensionContext context) {
-        context.getElement()
-               .map(element -> element.getAnnotation(Mute.class))
-               .ifPresent(annotation -> stateStack.popAndRestore(context));
-    }
-}
+Method-level `@Mute` always takes precedence over class-level `@Mute` where both are present
+(Spock explicitly skips class-level interceptor attachment for features that already carry
+their own `@Mute`).
 
-```
-## 4. Usage Specification
-To use the extension, developers place the @Mute annotation either at the class level or directly on the individual test method expected to generate noise.
-| Scenario | Usage | Behavior |
-|---|---|---|
-| **Mute All Output** | @Mute | Modifies the ROOT logger to OFF. No logs will print from the application or third-party dependencies during the test. |
-| **Mute Specific Target** | @Mute(classes = { DatabaseRepository.class }) | Modifies only the logger tied to DatabaseRepository.class. Other application logs will continue to print normally. |
-## 5. Testing Plan
-### 5.1 Testing Objectives
-To prove the structural integrity of the MuteExtension, the testing strategy must guarantee that:
- 1. Loggers are correctly transitioned to OFF prior to test execution.
- 2. Loggers are flawlessly restored to their pre-execution state regardless of where they started.
- 3. Tests running in sequence do not experience "state leakage" (i.e., a muted test does not permanently break logging for subsequent tests).
-### 5.2 Test Strategy
-We will use an explicitly ordered JUnit 5 test class (@TestMethodOrder) to simulate a sequential lifecycle and assert directly against the underlying Logback Logger.getLevel() state.
-### 5.3 Automated Test Suite
-```java
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import org.junit.jupiter.api.*;
-import org.slf4j.LoggerFactory;
+---
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+## 8. State Management Summary
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class MuteExtensionTest {
+Each framework uses the state mechanism best suited to its threading and lifecycle model:
 
-    private static class SpecificDummyService {}
+| Framework | Mechanism                             | Why                                                    |
+|-----------|---------------------------------------|--------------------------------------------------------|
+| JUnit 5   | `ExtensionContext.Store` (per-test)   | JUnit provides a first-class, scoped key/value store   |
+| TestNG    | `ThreadLocal`                         | TestNG tests run on discrete threads; simple and fast  |
+| Spock 2   | `try/finally` in interceptor          | Interceptors own the full invocation scope             |
+| Kotest    | `ConcurrentHashMap` keyed by TestCase | Kotest uses coroutines; `TestCase` is the stable key   |
 
-    // Cast SLF4J loggers to Logback loggers to inspect their raw Level
-    private static final Logger rootLogger = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
-    private static final Logger specificLogger = (Logger) LoggerFactory.getLogger(SpecificDummyService.class);
+---
 
-    private static Level originalRootLevel;
-    private static Level originalSpecificLevel;
+## 9. Testing Strategy
 
-    @BeforeAll
-    static void setupBaseline() {
-        originalRootLevel = rootLogger.getLevel();
-        originalSpecificLevel = specificLogger.getLevel();
+Each `*-core` module has a unit-test suite that exercises the extension/listener in isolation
+using injected `LogMute` test doubles (via the package-private constructor testing seam), with
+no real logging framework on the classpath.
 
-        // Establish an arbitrary baseline to prove restoration works
-        rootLogger.setLevel(Level.INFO);
-        specificLogger.setLevel(Level.DEBUG);
-    }
+Each `*-logback` / `*-log4j` / `*-jul` module has a full integration test suite that:
 
-    @AfterAll
-    static void restoreBaseline() {
-        rootLogger.setLevel(originalRootLevel);
-        specificLogger.setLevel(originalSpecificLevel);
-    }
+1. Runs fixture test classes programmatically through the real framework runner.
+2. Asserts that loggers are `OFF` during annotated tests.
+3. Asserts that loggers are restored to their original levels after each test.
+4. Asserts that state does not leak between tests (no cross-test contamination).
+5. Asserts that test failures still trigger restoration (state safety).
 
-    @Test
-    @Order(1)
-    @DisplayName("Pre-condition: Baseline log levels are respected")
-    void verifyBaselineIsCorrect() {
-        assertEquals(Level.INFO, rootLogger.getLevel());
-        assertEquals(Level.DEBUG, specificLogger.getLevel());
-    }
-
-    @Test
-    @Order(2)
-    @Mute // Targets ROOT
-    @DisplayName("Execution: @Mute cleanly turns OFF the root logger")
-    void rootLoggerIsMuted() {
-        assertEquals(Level.OFF, rootLogger.getLevel());
-        // Specific logger was independently set to DEBUG; it should not inherit OFF from Root in this context
-        assertEquals(Level.DEBUG, specificLogger.getLevel());
-    }
-
-    @Test
-    @Order(3)
-    @DisplayName("Restoration: State Stack correctly restores Root logger")
-    void rootLoggerIsRestored() {
-        assertEquals(Level.INFO, rootLogger.getLevel(), "Failed to restore Root logger after Step 2");
-    }
-
-    @Test
-    @Order(4)
-    @Mute(classes = SpecificDummyService.class) 
-    @DisplayName("Execution: @Mute cleanly turns OFF specific targeted loggers")
-    void specificLoggerIsMuted() {
-        assertEquals(Level.OFF, specificLogger.getLevel());
-        assertEquals(Level.INFO, rootLogger.getLevel(), "Root logger should be unaffected");
-    }
-
-    @Test
-    @Order(5)
-    @DisplayName("Restoration: State Stack correctly restores specific logger")
-    void specificLoggerIsRestored() {
-        assertEquals(Level.DEBUG, specificLogger.getLevel(), "Failed to restore Specific logger after Step 4");
-    }
-}
-
-```
-*I searched for "JUnit 5" extension technical specification template OR structure and JUnit 5 ExtensionContext State management best practices. The resulting document structure and architectural validation of the ExtensionContext.Store usage, namespaces, and lifecycle callbacks are grounded in the official JUnit 5 User Guide and community best practices for authoring robust extensions.*

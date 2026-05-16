@@ -22,7 +22,7 @@ package io.github.thestacktracewhisperer.mute;
 
 /**
  * Strategy interface for muting loggers before a test and producing a
- * {@link MuteRestorer} that undoes those mutations afterward.
+ * {@link LogRestorer} that undoes those mutations afterward.
  *
  * <p>Implementations are discovered via {@link java.util.ServiceLoader}.
  * Each implementation module (mute-junit5-logback, mute-junit5-log4j,
@@ -38,5 +38,5 @@ public interface LogMute {
      *                      means mute the ROOT logger
      * @return a command that restores all loggers to their pre-mute state
      */
-    MuteRestorer mute(Class<?>[] targetClasses);
+    LogRestorer mute(Class<?>[] targetClasses);
 }

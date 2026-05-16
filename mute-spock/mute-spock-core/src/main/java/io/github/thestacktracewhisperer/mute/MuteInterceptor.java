@@ -49,7 +49,7 @@ class MuteInterceptor implements IMethodInterceptor {
                     + "Add mute-spock-logback, mute-spock-log4j, or mute-spock-jul "
                     + "to your test dependencies.");
         }
-        List<MuteRestorer> restorers = new ArrayList<>(logMutes.size());
+        List<LogRestorer> restorers = new ArrayList<>(logMutes.size());
         try {
             for (LogMute mute : logMutes) {
                 restorers.add(mute.mute(targetClasses));

@@ -32,7 +32,7 @@ import java.util.function.Supplier;
  * {@link LogMute} implementation for Logback Classic.
  *
  * <p>Mutes Logback loggers by setting their level to {@link Level#OFF} and
- * restores the original levels afterward via the returned {@link MuteRestorer}.
+ * restores the original levels afterward via the returned {@link LogRestorer}.
  *
  * <p>Requires {@code ch.qos.logback:logback-classic} on the classpath;
  * throws {@link IllegalStateException} if the bound logging framework is not Logback.
@@ -55,7 +55,7 @@ public class LogbackMute implements LogMute {
     }
 
     @Override
-    public MuteRestorer mute(Class<?>[] targetClasses) {
+    public LogRestorer mute(Class<?>[] targetClasses) {
         Object loggerFactory = loggerFactorySupplier.get();
         if (!(loggerFactory instanceof LoggerContext ctx)) {
             throw new IllegalStateException(

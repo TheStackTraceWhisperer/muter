@@ -24,7 +24,7 @@ package io.github.thestacktracewhisperer.mute;
  * Command interface that restores loggers to their pre-mute state.
  */
 @FunctionalInterface
-public interface MuteRestorer {
+public interface LogRestorer {
     /** Restores all loggers to their pre-mute state. */
     void restore();
 }

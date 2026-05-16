@@ -49,7 +49,7 @@ import java.util.ServiceLoader;
 public class MuteListener implements IInvokedMethodListener {
 
     private final List<LogMute> logMutes;
-    private final ThreadLocal<MuteRestorer> restorerHolder = new ThreadLocal<>();
+    private final ThreadLocal<LogRestorer> restorerHolder = new ThreadLocal<>();
 
     /** Production constructor: discovers {@link LogMute} implementations via {@link ServiceLoader}. */
     public MuteListener() {
@@ -78,7 +78,7 @@ public class MuteListener implements IInvokedMethodListener {
                         + "Add mute-testng-logback, mute-testng-log4j, or mute-testng-jul "
                         + "to your test dependencies.");
             }
-            List<MuteRestorer> restorers = new ArrayList<>(logMutes.size());
+            List<LogRestorer> restorers = new ArrayList<>(logMutes.size());
             try {
                 for (LogMute mute : logMutes) {
                     restorers.add(mute.mute(annotation.classes()));
@@ -102,7 +102,7 @@ public class MuteListener implements IInvokedMethodListener {
         if (!method.isTestMethod()) {
             return;
         }
-        MuteRestorer restorer = restorerHolder.get();
+        LogRestorer restorer = restorerHolder.get();
         if (restorer != null) {
             restorerHolder.remove();
             restorer.restore();

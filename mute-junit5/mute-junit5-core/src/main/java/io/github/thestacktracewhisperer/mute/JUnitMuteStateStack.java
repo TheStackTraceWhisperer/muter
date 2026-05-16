@@ -23,7 +23,7 @@ package io.github.thestacktracewhisperer.mute;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
- * Manages a per-test-context {@link MuteRestorer} command so that each test
+ * Manages a per-test-context {@link LogRestorer} command so that each test
  * restores only its own mutations.
  */
 public class JUnitMuteStateStack {
@@ -42,18 +42,18 @@ public class JUnitMuteStateStack {
      * @param context  the JUnit extension context identifying the current test
      * @param restorer the restorer to store
      */
-    public void push(ExtensionContext context, MuteRestorer restorer) {
+    public void push(ExtensionContext context, LogRestorer restorer) {
         context.getStore(NAMESPACE).put(RESTORER_KEY, restorer);
     }
 
     /**
-     * Removes the stored {@link MuteRestorer} for the given context and invokes it.
+     * Removes the stored {@link LogRestorer} for the given context and invokes it.
      * Does nothing if no restorer is present (idempotent).
      *
      * @param context the JUnit extension context identifying the current test
      */
     public void popAndRestore(ExtensionContext context) {
-        MuteRestorer restorer = context.getStore(NAMESPACE).remove(RESTORER_KEY, MuteRestorer.class);
+        LogRestorer restorer = context.getStore(NAMESPACE).remove(RESTORER_KEY, LogRestorer.class);
 
         if (restorer != null) {
             restorer.restore();

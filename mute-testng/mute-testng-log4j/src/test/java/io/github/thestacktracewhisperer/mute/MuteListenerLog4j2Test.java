@@ -122,7 +122,7 @@ class MuteListenerLog4j2Test {
     @DisplayName("Direct mute with empty classes mutes root and restores level")
     void directMuteWithEmptyClassesMutesRootAndRestoresLevel() {
         Configurator.setRootLevel(Level.INFO);
-        MuteRestorer restorer = new Log4j2Mute().mute(new Class<?>[0]);
+        LogRestorer restorer = new Log4j2Mute().mute(new Class<?>[0]);
 
         assertEquals(Level.OFF, ROOT.getLevel());
         restorer.restore();
@@ -135,7 +135,7 @@ class MuteListenerLog4j2Test {
         Configurator.setRootLevel(Level.INFO);
         Configurator.setLevel(SERVICE_A.getName(), Level.DEBUG);
         Configurator.setLevel(SERVICE_B.getName(), Level.ERROR);
-        MuteRestorer restorer = new Log4j2Mute().mute(new Class<?>[] {ServiceA.class, ServiceB.class});
+        LogRestorer restorer = new Log4j2Mute().mute(new Class<?>[] {ServiceA.class, ServiceB.class});
 
         assertEquals(Level.INFO, ROOT.getLevel());
         assertEquals(Level.OFF, SERVICE_A.getLevel());
@@ -179,7 +179,7 @@ class MuteListenerLog4j2Test {
         ctx.getConfiguration().removeLogger(SERVICE_A.getName());
         ctx.updateLoggers();
 
-        MuteRestorer restorer = new Log4j2Mute().mute(new Class<?>[] {ServiceA.class});
+        LogRestorer restorer = new Log4j2Mute().mute(new Class<?>[] {ServiceA.class});
         assertEquals(Level.OFF, SERVICE_A.getLevel());
 
         restorer.restore();

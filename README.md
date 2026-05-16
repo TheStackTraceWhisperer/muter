@@ -1,34 +1,55 @@
-# Mute
+# mute
 
-A JUnit 5 and TestNG extension that declaratively silences logging noise during test execution.
+A multi-framework test extension that declaratively silences logging noise during test execution.
+Supports **JUnit 5**, **TestNG**, **Spock 2**, and **Kotest**.
 
 ## Purpose
 
-`@Mute` temporarily disables logging output for tests that intentionally trigger exceptions or other log-noisy paths, keeping CI console output clean without XML configuration changes.
+`@Mute` temporarily disables logging output for tests that intentionally trigger exceptions or
+other log-noisy paths, keeping CI console output clean without XML configuration changes.
 
 ## Project Structure
 
-This is a multimodule Maven project. Choose the module that matches your **test framework** and **logging framework**:
+This is a multimodule Maven project. Choose the module that matches your **test framework** and
+**logging framework**:
 
 ### JUnit 5
 
-| Module                 | Logging framework                       |
-|------------------------|-----------------------------------------|
-| `mute-junit5-logback` | SLF4J + Logback Classic                 |
-| `mute-junit5-log4j`   | Apache Log4j 2                          |
-| `mute-junit5-jul`     | `java.util.logging` (JUL, built-in JDK) |
+| Module                  | Logging framework                       |
+|-------------------------|-----------------------------------------|
+| `mute-junit5-logback`   | Logback                 |
+| `mute-junit5-log4j`     | Apache Log4j 2                          |
+| `mute-junit5-jul`       | `java.util.logging` |
 
 ### TestNG
 
-| Module                 | Logging framework                       |
-|------------------------|-----------------------------------------|
-| `mute-testng-logback` | SLF4J + Logback Classic                 |
-| `mute-testng-log4j`   | Apache Log4j 2                          |
-| `mute-testng-jul`     | `java.util.logging` (JUL, built-in JDK) |
+| Module                  | Logging framework                       |
+|-------------------------|-----------------------------------------|
+| `mute-testng-logback`   | Logback                 |
+| `mute-testng-log4j`     | Apache Log4j 2                          |
+| `mute-testng-jul`       | `java.util.logging` |
 
-The `mute-core`, `mute-junit5-core`, and `mute-testng-core` modules are shared dependencies pulled in automatically; you do not need to declare them explicitly.
+### Spock 2
 
-There is **no classpath pollution** between JUnit 5 and TestNG modules — each family depends only on its own test framework.
+| Module                  | Logging framework                       |
+|-------------------------|-----------------------------------------|
+| `mute-spock-logback`    | Logback                 |
+| `mute-spock-log4j`      | Apache Log4j 2                          |
+| `mute-spock-jul`        | `java.util.logging` |
+
+### Kotest
+
+| Module                  | Logging framework                       |
+|-------------------------|-----------------------------------------|
+| `mute-kotest-logback`   | Logback                 |
+| `mute-kotest-log4j`     | Apache Log4j 2                          |
+| `mute-kotest-jul`       | `java.util.logging` |
+
+The `mute-core`, `mute-*-core` modules are shared dependencies pulled in automatically as
+transitive deps; you do not need to declare them explicitly.
+
+There is **no classpath pollution** between families — each module depends only on its own test
+framework.
 
 ## Usage
 
@@ -37,35 +58,104 @@ There is **no classpath pollution** between JUnit 5 and TestNG modules — each 
 | **Mute all output**       | `@Mute`                                         | Sets the ROOT logger to `OFF`. No logs from the application or third-party libraries will print during the test. |
 | **Mute a specific class** | `@Mute(classes = { DatabaseRepository.class })` | Sets only the logger for `DatabaseRepository` to `OFF`. Other logs continue normally.                            |
 
-Annotate a test method or a test class:
+Original log levels are restored automatically after every test, regardless of pass/fail/error.
+
+### JUnit 5
+
+Annotate a test method or a test class. The annotation registers `MuteExtension` automatically
+via `@ExtendWith`.
 
 ```java
+// method-level
 @Test
 @Mute
 void throwsExpectedException() {
     assertThrows(IllegalArgumentException.class, () -> service.doSomething(null));
 }
 
-@Test
+// class-level — applies to every test method in the class
 @Mute(classes = { PaymentService.class })
-void paymentFailsGracefully() {
-    assertThrows(PaymentException.class, () -> paymentService.charge(-1));
+class PaymentServiceTest {
+    @Test
+    void paymentFailsGracefully() {
+        assertThrows(PaymentException.class, () -> paymentService.charge(-1));
+    }
 }
 ```
 
-Original log levels are restored automatically after every test, regardless of pass/fail/error.
+### TestNG
 
-### TestNG listener auto-registration
+The `MuteListener` is automatically discovered via
+`META-INF/services/org.testng.ITestNGListener` (TestNG 7.5+). No explicit `@Listeners`
+declaration or `testng.xml` configuration is required.
 
-For TestNG modules, the `MuteListener` is automatically discovered via
-`META-INF/services/org.testng.ITestNGListener` (TestNG 7.5+). No explicit
-`@Listeners` declaration or `testng.xml` configuration is required.
+```java
+// method-level
+@Test(expectedExceptions = IllegalArgumentException.class)
+@Mute
+public void throwsExpectedException() {
+    service.doSomething(null);
+}
+
+// class-level — applies to every test method in the class
+@Mute(classes = { PaymentService.class })
+public class PaymentServiceTest {
+    @Test(expectedExceptions = PaymentException.class)
+    public void paymentFailsGracefully() {
+        paymentService.charge(-1);
+    }
+}
+```
+
+### Spock 2
+
+Annotate a feature method or a specification class. The annotation registers `MuteSpockExtension`
+automatically via `@ExtensionAnnotation`.
+
+```groovy
+// feature-level
+def "throws expected exception"() {
+    when: service.doSomething(null)
+    then: thrown IllegalArgumentException
+}
+
+// spec-level — applies to every feature in the spec
+@Mute(classes = [PaymentService])
+class PaymentServiceSpec extends Specification {
+    def "payment fails gracefully"() {
+        when: paymentService.charge(-1)
+        then: thrown PaymentException
+    }
+}
+```
+
+### Kotest
+
+Annotate the **spec class** (Kotest's test model uses lambdas rather than methods, so
+`@Mute` is class-level only). The `MuteKotestListener` is auto-registered globally via
+`@AutoScan` — no configuration required.
+
+```kotlin
+@Mute
+class PaymentServiceSpec : FunSpec({
+    test("payment fails gracefully") {
+        shouldThrow<PaymentException> { paymentService.charge(-1) }
+    }
+})
+
+@Mute(classes = [PaymentService::class])
+class PaymentServiceIsolatedSpec : FunSpec({
+    test("only the PaymentService logger is muted") {
+        shouldThrow<PaymentException> { paymentService.charge(-1) }
+    }
+})
+```
 
 ## Dependency
 
 Pick **one** module that matches your test framework and logging framework:
 
-### JUnit 5 + Logback Classic (SLF4J)
+### JUnit 5 + Logback
 
 ```xml
 <dependency>
@@ -98,7 +188,7 @@ Pick **one** module that matches your test framework and logging framework:
 </dependency>
 ```
 
-### TestNG + Logback Classic (SLF4J)
+### TestNG + Logback
 
 ```xml
 <dependency>
@@ -131,7 +221,95 @@ Pick **one** module that matches your test framework and logging framework:
 </dependency>
 ```
 
-> **Note:** Projects using Apache Commons Logging with the default JUL backend are also covered by the `jul` modules, since Commons Logging routes through `java.util.logging` in that configuration.
+### Spock 2 + Logback
+
+```xml
+<dependency>
+    <groupId>io.github.thestacktracewhisperer</groupId>
+    <artifactId>mute-spock-logback</artifactId>
+    <version>1.0.0</version>
+    <scope>test</scope>
+</dependency>
+```
+
+### Spock 2 + Apache Log4j 2
+
+```xml
+<dependency>
+    <groupId>io.github.thestacktracewhisperer</groupId>
+    <artifactId>mute-spock-log4j</artifactId>
+    <version>1.0.0</version>
+    <scope>test</scope>
+</dependency>
+```
+
+### Spock 2 + java.util.logging (JUL)
+
+```xml
+<dependency>
+    <groupId>io.github.thestacktracewhisperer</groupId>
+    <artifactId>mute-spock-jul</artifactId>
+    <version>1.0.0</version>
+    <scope>test</scope>
+</dependency>
+```
+
+### Kotest + Logback
+
+```xml
+<dependency>
+    <groupId>io.github.thestacktracewhisperer</groupId>
+    <artifactId>mute-kotest-logback</artifactId>
+    <version>1.0.0</version>
+    <scope>test</scope>
+</dependency>
+```
+
+### Kotest + Apache Log4j 2
+
+```xml
+<dependency>
+    <groupId>io.github.thestacktracewhisperer</groupId>
+    <artifactId>mute-kotest-log4j</artifactId>
+    <version>1.0.0</version>
+    <scope>test</scope>
+</dependency>
+```
+
+### Kotest + java.util.logging (JUL)
+
+```xml
+<dependency>
+    <groupId>io.github.thestacktracewhisperer</groupId>
+    <artifactId>mute-kotest-jul</artifactId>
+    <version>1.0.0</version>
+    <scope>test</scope>
+</dependency>
+```
+
+> **Note:** Projects using Apache Commons Logging with the default JUL backend are also covered
+> by the `jul` modules, since Commons Logging routes through `java.util.logging` in that
+> configuration.
+
+## Requirements
+
+- Java 21+ (Java 21 is the minimum supported runtime and release level)
+- One of: JUnit Jupiter 5.x, TestNG 7.5+, Spock 2.x, or Kotest 5.x
+
+## Provided Dependencies
+
+The following dependencies must be present on the classpath at runtime but are **not** bundled
+with this library — your project is expected to supply them:
+
+| Module family      | Required dependencies              |
+|--------------------|------------------------------------|
+| `mute-*-logback`   | SLF4J 2.x API + Logback 1.5.x   |
+| `mute-*-log4j`     | Log4j 2 API + Core 2.x             |
+| `mute-*-jul`       | _(none — JUL is part of the JDK)_  |
+| `mute-junit5-*`    | JUnit Jupiter 5.x                  |
+| `mute-testng-*`    | TestNG 7.5+                        |
+| `mute-spock-*`     | Spock Framework 2.x                |
+| `mute-kotest-*`    | Kotest 5.x + `kotlin-stdlib`       |
 
 ## Contributing
 
@@ -165,21 +343,3 @@ To regenerate or update all headers run:
 ```bash
 mvn license:update-file-header
 ```
-
-## Requirements
-
-- Java 21+ (Java 21 is the minimum supported runtime and release level)
-- JUnit Jupiter 5.x **or** TestNG 7.5+
-
-## Provided Dependencies
-
-The following dependencies must be present on the classpath at runtime but are **not** bundled with this library — your project is expected to supply them:
-
-| Module family     | Required dependencies             |
-|-------------------|-----------------------------------|
-| `mute-*-logback` | SLF4J 2.x, Logback Classic 1.5.x  |
-| `mute-*-log4j`   | Log4j 2 API + Core 2.x            |
-| `mute-*-jul`     | _(none — JUL is part of the JDK)_ |
-| `mute-junit5-*`  | JUnit Jupiter 5.x                 |
-| `mute-testng-*`  | TestNG 7.5+                       |
-

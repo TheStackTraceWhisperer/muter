@@ -32,7 +32,7 @@ import java.util.List;
  * {@link LogMute} implementation for Apache Log4j 2.
  *
  * <p>Mutes Log4j 2 loggers by setting their level to {@link Level#OFF} and
- * restores the original configuration afterward via the returned {@link MuteRestorer}.
+ * restores the original configuration afterward via the returned {@link LogRestorer}.
  *
  * <p>Requires {@code org.apache.logging.log4j:log4j-core} on the classpath;
  * throws {@link IllegalStateException} if Log4j 2 Core is not available.
@@ -61,7 +61,7 @@ public class Log4j2Mute implements LogMute {
     }
 
     @Override
-    public MuteRestorer mute(Class<?>[] targetClasses) {
+    public LogRestorer mute(Class<?>[] targetClasses) {
         LoggerContext ctx = getLoggerContext();
         List<Runnable> restoreActions = new ArrayList<>();
 

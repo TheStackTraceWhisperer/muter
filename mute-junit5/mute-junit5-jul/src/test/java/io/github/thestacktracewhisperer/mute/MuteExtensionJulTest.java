@@ -115,7 +115,7 @@ class MuteExtensionJulTest {
     @DisplayName("Direct mute with empty classes mutes root and restores level")
     void directMuteWithEmptyClassesMutesRootAndRestoresLevel() {
         ROOT.setLevel(Level.INFO);
-        MuteRestorer restorer = new JulMute().mute(new Class<?>[0]);
+        LogRestorer restorer = new JulMute().mute(new Class<?>[0]);
 
         assertEquals(Level.OFF, ROOT.getLevel());
         restorer.restore();
@@ -128,7 +128,7 @@ class MuteExtensionJulTest {
         ROOT.setLevel(Level.INFO);
         SERVICE_A.setLevel(Level.FINE);
         SERVICE_B.setLevel(Level.SEVERE);
-        MuteRestorer restorer = new JulMute().mute(new Class<?>[] {ServiceA.class, ServiceB.class});
+        LogRestorer restorer = new JulMute().mute(new Class<?>[] {ServiceA.class, ServiceB.class});
 
         assertEquals(Level.INFO, ROOT.getLevel());
         assertEquals(Level.OFF, SERVICE_A.getLevel());

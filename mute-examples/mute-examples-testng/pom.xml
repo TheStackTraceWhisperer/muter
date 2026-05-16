@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.thestacktracewhisperer</groupId>
         <artifactId>mute-examples</artifactId>
-        <version>1.0.0</version>
+        <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>mute-examples-testng</artifactId>

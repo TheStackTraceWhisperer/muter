@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.github.thestacktracewhisperer</groupId>
         <artifactId>mute</artifactId>
-        <version>1.0.0</version>
+        <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

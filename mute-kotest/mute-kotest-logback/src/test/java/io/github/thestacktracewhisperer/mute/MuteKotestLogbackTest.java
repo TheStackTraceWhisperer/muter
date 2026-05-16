@@ -61,7 +61,7 @@ class MuteKotestLogbackTest {
     @DisplayName("Direct mute with empty classes mutes root and restores level")
     void directMuteWithEmptyClassesMutesRootAndRestoresLevel() {
         ROOT.setLevel(Level.INFO);
-        MuteRestorer restorer = new LogbackMute().mute(new Class<?>[0]);
+        LogRestorer restorer = new LogbackMute().mute(new Class<?>[0]);
         assertEquals(Level.OFF, ROOT.getLevel());
         restorer.restore();
         assertEquals(Level.INFO, ROOT.getLevel());
@@ -72,7 +72,7 @@ class MuteKotestLogbackTest {
     void directMuteWithClassesMutesOnlySelectedLoggersAndRestores() {
         ROOT.setLevel(Level.INFO);
         SERVICE_A.setLevel(Level.DEBUG);
-        MuteRestorer restorer = new LogbackMute().mute(new Class<?>[]{ServiceA.class});
+        LogRestorer restorer = new LogbackMute().mute(new Class<?>[]{ServiceA.class});
         assertEquals(Level.INFO, ROOT.getLevel());
         assertEquals(Level.OFF, SERVICE_A.getLevel());
         restorer.restore();
@@ -85,7 +85,7 @@ class MuteKotestLogbackTest {
     void nullInheritedLevelIsRestored() {
         SERVICE_A.setLevel(null);
         assertNull(SERVICE_A.getLevel());
-        MuteRestorer restorer = new LogbackMute().mute(new Class<?>[]{ServiceA.class});
+        LogRestorer restorer = new LogbackMute().mute(new Class<?>[]{ServiceA.class});
         assertEquals(Level.OFF, SERVICE_A.getLevel());
         restorer.restore();
         assertNull(SERVICE_A.getLevel());

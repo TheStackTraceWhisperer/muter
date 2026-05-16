@@ -73,7 +73,7 @@ public class MuteExtension implements BeforeTestExecutionCallback, AfterTestExec
                         + "Add mute-junit5-logback, mute-junit5-log4j, or mute-junit5-jul "
                         + "to your test dependencies.");
             }
-            List<MuteRestorer> restorers = new ArrayList<>(logMutes.size());
+            List<LogRestorer> restorers = new ArrayList<>(logMutes.size());
             try {
                 for (LogMute mute : logMutes) {
                     restorers.add(mute.mute(annotation.classes()));

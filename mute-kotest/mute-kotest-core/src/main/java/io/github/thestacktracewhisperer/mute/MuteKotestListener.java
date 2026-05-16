@@ -53,7 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MuteKotestListener implements BeforeEachListener, AfterEachListener {
 
     private final List<LogMute> logMutes;
-    private final Map<Object, MuteRestorer> restorerHolder = new ConcurrentHashMap<>();
+    private final Map<Object, LogRestorer> restorerHolder = new ConcurrentHashMap<>();
 
     @Override
     public String getName() {
@@ -109,7 +109,7 @@ public class MuteKotestListener implements BeforeEachListener, AfterEachListener
                     + "Add mute-kotest-logback, mute-kotest-log4j, or mute-kotest-jul "
                     + "to your test dependencies.");
         }
-        List<MuteRestorer> restorers = new ArrayList<>(logMutes.size());
+        List<LogRestorer> restorers = new ArrayList<>(logMutes.size());
         try {
             for (LogMute mute : logMutes) {
                 restorers.add(mute.mute(annotation.classes()));
@@ -120,7 +120,7 @@ public class MuteKotestListener implements BeforeEachListener, AfterEachListener
             }
             throw e;
         }
-        MuteRestorer restorer = () -> {
+        LogRestorer restorer = () -> {
             for (int i = restorers.size() - 1; i >= 0; i--) {
                 restorers.get(i).restore();
             }
@@ -145,7 +145,7 @@ public class MuteKotestListener implements BeforeEachListener, AfterEachListener
     }
 
     void restoreAfter(Object executionKey) {
-        MuteRestorer restorer = restorerHolder.get(executionKey);
+        LogRestorer restorer = restorerHolder.get(executionKey);
         if (restorer != null) {
             restorer.restore();
             restorerHolder.remove(executionKey, restorer);

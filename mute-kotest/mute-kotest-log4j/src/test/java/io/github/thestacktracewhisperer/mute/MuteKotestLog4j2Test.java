@@ -72,7 +72,7 @@ class MuteKotestLog4j2Test {
     @DisplayName("Direct mute with empty classes mutes root and restores level")
     void directMuteWithEmptyClassesMutesRootAndRestoresLevel() {
         Configurator.setRootLevel(Level.INFO);
-        MuteRestorer restorer = new Log4j2Mute().mute(new Class<?>[0]);
+        LogRestorer restorer = new Log4j2Mute().mute(new Class<?>[0]);
         assertEquals(Level.OFF, ROOT.getLevel());
         restorer.restore();
         assertEquals(Level.INFO, ROOT.getLevel());
@@ -83,7 +83,7 @@ class MuteKotestLog4j2Test {
     void directMuteWithClassesMutesOnlySelectedLoggersAndRestores() {
         Configurator.setRootLevel(Level.INFO);
         Configurator.setLevel(SERVICE_A.getName(), Level.DEBUG);
-        MuteRestorer restorer = new Log4j2Mute().mute(new Class<?>[]{ServiceA.class});
+        LogRestorer restorer = new Log4j2Mute().mute(new Class<?>[]{ServiceA.class});
         assertEquals(Level.INFO, ROOT.getLevel());
         assertEquals(Level.OFF, SERVICE_A.getLevel());
         restorer.restore();
@@ -101,7 +101,7 @@ class MuteKotestLog4j2Test {
 
         Level effectiveBefore = SERVICE_A.getLevel();
 
-        MuteRestorer restorer = new Log4j2Mute().mute(new Class<?>[]{ServiceA.class});
+        LogRestorer restorer = new Log4j2Mute().mute(new Class<?>[]{ServiceA.class});
         assertEquals(Level.OFF, SERVICE_A.getLevel());
 
         restorer.restore();
@@ -190,7 +190,7 @@ class MuteKotestLog4j2Test {
     @DisplayName("Duplicate class in target list is processed only once")
     void duplicateClassIsDeduplicatedAndRestored() {
         Configurator.setLevel(SERVICE_A.getName(), Level.DEBUG);
-        MuteRestorer restorer = new Log4j2Mute()
+        LogRestorer restorer = new Log4j2Mute()
                 .mute(new Class<?>[]{ServiceA.class, ServiceA.class});
         assertEquals(Level.OFF, SERVICE_A.getLevel());
         restorer.restore();

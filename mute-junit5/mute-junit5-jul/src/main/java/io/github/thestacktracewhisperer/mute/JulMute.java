@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  * {@link LogMute} implementation for {@code java.util.logging} (JUL).
  *
  * <p>Mutes JUL loggers by setting their level to {@link Level#OFF} and
- * restores the original levels afterward via the returned {@link MuteRestorer}.
+ * restores the original levels afterward via the returned {@link LogRestorer}.
  *
  * <p>No additional dependencies are required — JUL is part of the JDK.
  */
@@ -39,7 +39,7 @@ public class JulMute implements LogMute {
     public JulMute() {}
 
     @Override
-    public MuteRestorer mute(Class<?>[] targetClasses) {
+    public LogRestorer mute(Class<?>[] targetClasses) {
         Map<Logger, Level> originalLevels = targetClasses.length == 0
                 ? new HashMap<>(2)
                 : new HashMap<>(targetClasses.length * 2);
