@@ -9,9 +9,9 @@ package io.github.thestacktracewhisperer.mute;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -39,46 +39,48 @@ import java.util.function.Supplier;
  */
 public class LogbackMute implements LogMute {
 
-    private final Supplier<Object> loggerFactorySupplier;
+  private final Supplier<Object> loggerFactorySupplier;
 
-    /** Production constructor: resolves the logger factory from {@link org.slf4j.LoggerFactory}. */
-    public LogbackMute() {
-        this(org.slf4j.LoggerFactory::getILoggerFactory);
+  /**
+   * Production constructor: resolves the logger factory from {@link org.slf4j.LoggerFactory}.
+   */
+  public LogbackMute() {
+    this(org.slf4j.LoggerFactory::getILoggerFactory);
+  }
+
+  /**
+   * Testing seam that allows controlled logger-factory injection in unit tests.
+   * Production use should rely on {@link #LogbackMute()}.
+   */
+  LogbackMute(Supplier<Object> loggerFactorySupplier) {
+    this.loggerFactorySupplier = loggerFactorySupplier;
+  }
+
+  @Override
+  public LogRestorer mute(Class<?>[] targetClasses) {
+    Object loggerFactory = loggerFactorySupplier.get();
+    if (!(loggerFactory instanceof LoggerContext ctx)) {
+      throw new IllegalStateException(
+        "mute-spock-logback requires Logback Classic on the classpath; found: "
+          + (loggerFactory == null ? "null" : loggerFactory.getClass().getName()));
     }
 
-    /**
-     * Testing seam that allows controlled logger-factory injection in unit tests.
-     * Production use should rely on {@link #LogbackMute()}.
-     */
-    LogbackMute(Supplier<Object> loggerFactorySupplier) {
-        this.loggerFactorySupplier = loggerFactorySupplier;
+    Map<Logger, Level> originalLevels = targetClasses.length == 0
+      ? new HashMap<>(2)
+      : new HashMap<>(targetClasses.length * 2);
+
+    if (targetClasses.length == 0) {
+      Logger rootLogger = ctx.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+      originalLevels.put(rootLogger, rootLogger.getLevel());
+      rootLogger.setLevel(Level.OFF);
+    } else {
+      for (Class<?> clazz : targetClasses) {
+        Logger logger = ctx.getLogger(clazz.getName());
+        originalLevels.putIfAbsent(logger, logger.getLevel());
+        logger.setLevel(Level.OFF);
+      }
     }
 
-    @Override
-    public LogRestorer mute(Class<?>[] targetClasses) {
-        Object loggerFactory = loggerFactorySupplier.get();
-        if (!(loggerFactory instanceof LoggerContext ctx)) {
-            throw new IllegalStateException(
-                    "mute-spock-logback requires Logback Classic on the classpath; found: "
-                            + (loggerFactory == null ? "null" : loggerFactory.getClass().getName()));
-        }
-
-        Map<Logger, Level> originalLevels = targetClasses.length == 0
-                ? new HashMap<>(2)
-                : new HashMap<>(targetClasses.length * 2);
-
-        if (targetClasses.length == 0) {
-            Logger rootLogger = ctx.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
-            originalLevels.put(rootLogger, rootLogger.getLevel());
-            rootLogger.setLevel(Level.OFF);
-        } else {
-            for (Class<?> clazz : targetClasses) {
-                Logger logger = ctx.getLogger(clazz.getName());
-                originalLevels.putIfAbsent(logger, logger.getLevel());
-                logger.setLevel(Level.OFF);
-            }
-        }
-
-        return () -> originalLevels.forEach(Logger::setLevel);
-    }
+    return () -> originalLevels.forEach(Logger::setLevel);
+  }
 }

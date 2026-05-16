@@ -10,27 +10,31 @@ output.
 
 ### 1.2 Supported Frameworks
 
-| Test framework | Integration mechanism          | Auto-registration                                |
-|----------------|-------------------------------|--------------------------------------------------|
-| JUnit 5        | `BeforeTestExecutionCallback` / `AfterTestExecutionCallback` | `@ExtendWith` on `@Mute` itself |
-| TestNG         | `IInvokedMethodListener`       | `META-INF/services/org.testng.ITestNGListener`   |
-| Spock 2        | `IAnnotationDrivenExtension` + `IMethodInterceptor` | `@ExtensionAnnotation` on `@Mute` itself |
-| Kotest         | `BeforeEachListener` / `AfterEachListener` | `@AutoScan` on listener class          |
+| Test framework | Integration mechanism                                        | Auto-registration                              |
+|----------------|--------------------------------------------------------------|------------------------------------------------|
+| JUnit 5        | `BeforeTestExecutionCallback` / `AfterTestExecutionCallback` | `@ExtendWith` on `@Mute` itself                |
+| TestNG         | `IInvokedMethodListener`                                     | `META-INF/services/org.testng.ITestNGListener` |
+| Spock 2        | `IAnnotationDrivenExtension` + `IMethodInterceptor`          | `@ExtensionAnnotation` on `@Mute` itself       |
+| Kotest         | `BeforeEachListener` / `AfterEachListener`                   | `@AutoScan` on listener class                  |
 
 ### 1.3 Supported Logging Backends
 
 `LogMute` implementations are provided for:
 
-| Backend               | Module suffix   | Implementation class |
-|-----------------------|-----------------|----------------------|
-| Logback       | `-logback`      | `LogbackMute`        |
-| Apache Log4j 2        | `-log4j`        | `Log4j2Mute`         |
-| `java.util.logging`   | `-jul`          | `JulMute`            |
+| Backend             | Module suffix | Implementation class |
+|---------------------|---------------|----------------------|
+| Logback             | `-logback`    | `LogbackMute`        |
+| Apache Log4j 2      | `-log4j`      | `Log4j2Mute`         |
+| `java.util.logging` | `-jul`        | `JulMute`            |
 
 ### 1.4 Architectural Goals
 
 - **Locality of Behaviour:** Muting configuration lives directly on the test method or class.
-- **Performance:** All three implementations set the targeted logger(s) to `OFF` at the logger object itself, so the framework's enabled check (`isEnabledFor` / `isEnabled` / `isLoggable`) rejects every call before parameter substitution or appender/handler I/O occurs. Note: eager Java string concatenation in caller code (e.g. `logger.warn("x=" + x)`) is evaluated by the JVM before the logger method is invoked and is unaffected — use parameterized logging (e.g. `logger.warn("x={}", x)`) to avoid that cost.
+- **Performance:** All three implementations set the targeted logger(s) to `OFF` at the logger object itself, so the
+  framework's enabled check (`isEnabledFor` / `isEnabled` / `isLoggable`) rejects every call before parameter
+  substitution or appender/handler I/O occurs. Note: eager Java string concatenation in caller code (e.g.
+  `logger.warn("x=" + x)`) is evaluated by the JVM before the logger method is invoked and is unaffected — use
+  parameterized logging (e.g. `logger.warn("x={}", x)`) to avoid that cost.
 - **State Safety:** Original log levels are restored after every test regardless of outcome.
 - **SOLID / DIP:** Test-framework mechanics are fully decoupled from logging-framework mechanics
   via the `LogMute` strategy interface and `ServiceLoader` discovery.
@@ -82,23 +86,24 @@ dependency is sufficient to wire everything together.
 
 ```java
 public interface LogMute {
-    /**
-     * Mutes the loggers for the specified target classes.
-     *
-     * @param targetClasses classes whose loggers should be muted;
-     *                      empty array means mute the ROOT logger
-     * @return a command that restores all loggers to their pre-mute state
-     */
-    MuteRestorer mute(Class<?>[] targetClasses);
+  /**
+   * Mutes the loggers for the specified target classes.
+   *
+   * @param targetClasses classes whose loggers should be muted;
+   *                      empty array means mute the ROOT logger
+   * @return a command that restores all loggers to their pre-mute state
+   */
+  MuteRestorer mute(Class<?>[] targetClasses);
 }
 ```
 
 ### 3.2 `MuteRestorer` — Command Interface
 
 ```java
+
 @FunctionalInterface
 public interface MuteRestorer {
-    void restore();
+  void restore();
 }
 ```
 
@@ -112,24 +117,25 @@ it; callers never need to know anything about the underlying logging API.
 Each framework family has its own copy of `@Mute` in its `*-core` module because each requires a
 different meta-annotation to hook into its framework's extension mechanism.
 
-| Framework | Meta-annotation on `@Mute`          |
-|-----------|-------------------------------------|
-| JUnit 5   | `@ExtendWith(MuteExtension.class)`  |
-| TestNG    | _(none — listener self-registers via SPI)_ |
-| Spock 2   | `@ExtensionAnnotation(MuteSpockExtension.class)` |
+| Framework | Meta-annotation on `@Mute`                         |
+|-----------|----------------------------------------------------|
+| JUnit 5   | `@ExtendWith(MuteExtension.class)`                 |
+| TestNG    | _(none — listener self-registers via SPI)_         |
+| Spock 2   | `@ExtensionAnnotation(MuteSpockExtension.class)`   |
 | Kotest    | _(none — listener self-registers via `@AutoScan`)_ |
 
 All variants share the same user-facing contract:
 
 ```java
+
 @Target({ElementType.METHOD, ElementType.TYPE})   // TYPE only for Kotest
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Mute {
-    /**
-     * Classes whose loggers should be muted.
-     * Leave empty to mute the ROOT logger.
-     */
-    Class<?>[] classes() default {};
+  /**
+   * Classes whose loggers should be muted.
+   * Leave empty to mute the ROOT logger.
+   */
+  Class<?>[] classes() default {};
 }
 ```
 
@@ -148,7 +154,8 @@ public @interface Mute {
 
 **State management:** `JUnitMuteStateStack` stores the `MuteRestorer` in JUnit's
 `ExtensionContext.Store` scoped to the current test method. Each test has its own store entry,
-so nested tests and parallel execution are both safe.
+so nested tests are safe. Note: the restorer bookkeeping is thread-isolated, but the
+underlying logger level mutation is JVM-global state — see §10 for the parallel execution caveat.
 
 ```
 @Mute on method / class
@@ -177,7 +184,8 @@ configuration required.
 **Annotation lookup:** method first, then declaring class.
 
 **State management:** `ThreadLocal<MuteRestorer>` — one slot per thread, set in `before` and
-cleared in `after`. This is correct for both single-threaded and parallel TestNG runs.
+cleared in `after`. The per-thread bookkeeping is correct for parallel TestNG runs; however, the
+underlying logger level mutation is JVM-global state — see §10 for the parallel execution caveat.
 
 ```
 @Mute on method / class
@@ -237,8 +245,8 @@ and registers all `@AutoScan`-annotated listeners globally. No user configuratio
 `@Mute`. Because Kotest tests are lambdas, the spec class is the only annotation target.
 
 **State management:** `ConcurrentHashMap<Object, MuteRestorer>` keyed by the `TestCase` instance,
-which is stable and unique per test execution. This is safe for Kotest's coroutine-based parallel
-execution model.
+which is stable and unique per test execution. The bookkeeping is coroutine-safe, but the
+underlying logger level mutation is JVM-global state — see §10 for the parallel execution caveat.
 
 ```
 @Mute on spec class
@@ -273,10 +281,10 @@ Resolves `org.slf4j.LoggerFactory.getILoggerFactory()` and casts to `LoggerConte
 
 ```java
 MuteRestorer mute(Class<?>[] targetClasses) {
-    LoggerContext ctx = (LoggerContext) loggerFactorySupplier.get();
-    Map<Logger, Level> saved = new HashMap<>();
-    // ... collect and set OFF ...
-    return () -> saved.forEach(Logger::setLevel);
+  LoggerContext ctx = (LoggerContext) loggerFactorySupplier.get();
+  Map<Logger, Level> saved = new HashMap<>();
+  // ... collect and set OFF ...
+  return () -> saved.forEach(Logger::setLevel);
 }
 ```
 
@@ -298,12 +306,12 @@ Resolves loggers via `java.util.logging.Logger.getLogger()`. The root logger nam
 All four frameworks support `@Mute` at the class/spec level. The annotation applies to every
 test in that class — useful when an entire test class exercises noisy paths.
 
-| Framework | Class-level mechanism |
-|-----------|-----------------------|
-| JUnit 5   | `findMuteAnnotation()` falls back from method to `context.getRequiredTestClass()` |
+| Framework | Class-level mechanism                                                                  |
+|-----------|----------------------------------------------------------------------------------------|
+| JUnit 5   | `findMuteAnnotation()` falls back from method to `context.getRequiredTestClass()`      |
 | TestNG    | `findMuteAnnotation()` falls back from method reflection to `testClass.getRealClass()` |
-| Spock 2   | `visitSpecAnnotation()` adds interceptors to all features at spec initialisation time |
-| Kotest    | Only class-level is supported (`@Target(ElementType.TYPE)` only) |
+| Spock 2   | `visitSpecAnnotation()` adds interceptors to all features at spec initialisation time  |
+| Kotest    | Only class-level is supported (`@Target(ElementType.TYPE)` only)                       |
 
 Method-level `@Mute` always takes precedence over class-level `@Mute` where both are present
 (Spock explicitly skips class-level interceptor attachment for features that already carry
@@ -315,12 +323,12 @@ their own `@Mute`).
 
 Each framework uses the state mechanism best suited to its threading and lifecycle model:
 
-| Framework | Mechanism                             | Why                                                    |
-|-----------|---------------------------------------|--------------------------------------------------------|
-| JUnit 5   | `ExtensionContext.Store` (per-test)   | JUnit provides a first-class, scoped key/value store   |
-| TestNG    | `ThreadLocal`                         | TestNG tests run on discrete threads; simple and fast  |
-| Spock 2   | `try/finally` in interceptor          | Interceptors own the full invocation scope             |
-| Kotest    | `ConcurrentHashMap` keyed by TestCase | Kotest uses coroutines; `TestCase` is the stable key   |
+| Framework | Mechanism                             | Why                                                   |
+|-----------|---------------------------------------|-------------------------------------------------------|
+| JUnit 5   | `ExtensionContext.Store` (per-test)   | JUnit provides a first-class, scoped key/value store  |
+| TestNG    | `ThreadLocal`                         | TestNG tests run on discrete threads; simple and fast |
+| Spock 2   | `try/finally` in interceptor          | Interceptors own the full invocation scope            |
+| Kotest    | `ConcurrentHashMap` keyed by TestCase | Kotest uses coroutines; `TestCase` is the stable key  |
 
 ---
 
@@ -337,4 +345,29 @@ Each `*-logback` / `*-log4j` / `*-jul` module has a full integration test suite 
 3. Asserts that loggers are restored to their original levels after each test.
 4. Asserts that state does not leak between tests (no cross-test contamination).
 5. Asserts that test failures still trigger restoration (state safety).
+
+---
+
+## 10. Known Limitations
+
+### 10.1 Parallel Test Execution
+
+Logger levels are **JVM-global mutable state**. Muting a logger on Thread-1 suppresses output
+for every thread in the same JVM — including concurrent non-muted tests on Thread-2.
+
+Each framework's *bookkeeping* (restorer storage and cleanup) is correctly scoped per-test or
+per-thread:
+
+| Framework | Restorer storage         | Thread-safe bookkeeping? | Logger mutation thread-safe? |
+|-----------|--------------------------|--------------------------|------------------------------|
+| JUnit 5   | `ExtensionContext.Store`  | ✅ per-test context       | ❌ global state               |
+| TestNG    | `ThreadLocal`             | ✅ per-thread             | ❌ global state               |
+| Spock 2   | `try/finally` local var   | ✅ per-invocation         | ❌ global state               |
+| Kotest    | `ConcurrentHashMap`       | ✅ per `TestCase`         | ❌ global state               |
+
+**Practical consequence:** if tests run in parallel and any of them is annotated `@Mute`, a
+concurrent non-muted test may lose log output for the duration of the muted test.
+
+**Workaround:** restrict `@Mute`-annotated tests to sequential execution. In JUnit 5 this can
+be done with `@Execution(ExecutionMode.SAME_THREAD)` on the annotated class.
 

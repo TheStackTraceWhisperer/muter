@@ -9,9 +9,9 @@ package io.github.thestacktracewhisperer.mute.examples;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,7 +19,9 @@ package io.github.thestacktracewhisperer.mute.examples;
  * limitations under the License.
  * #L%
  */
+
 import java.util.logging.Logger;
+
 /**
  * Example production class whose loggers should be silenced during tests.
  *
@@ -28,15 +30,18 @@ import java.util.logging.Logger;
  * the log level is set to OFF for the duration of the test and restored afterward.
  */
 public class NoiseProducer {
-    private static final Logger log = Logger.getLogger(NoiseProducer.class.getName());
-    private NoiseProducer() {}
-    /**
-     * Performs an operation that intentionally logs a warning then fails.
-     *
-     * @throws RuntimeException always, to simulate an expected failure
-     */
-    public static void doSomethingExpectedToFail() {
-        log.warning("Expected failure – this noise should be suppressed by @Mute");
-        throw new RuntimeException("expected");
-    }
+  private static final Logger log = Logger.getLogger(NoiseProducer.class.getName());
+
+  private NoiseProducer() {
+  }
+
+  /**
+   * Performs an operation that intentionally logs a warning then fails.
+   *
+   * @throws RuntimeException always, to simulate an expected failure
+   */
+  public static void doSomethingExpectedToFail() {
+    log.warning("Expected failure – this noise should be suppressed by @Mute");
+    throw new RuntimeException("expected");
+  }
 }

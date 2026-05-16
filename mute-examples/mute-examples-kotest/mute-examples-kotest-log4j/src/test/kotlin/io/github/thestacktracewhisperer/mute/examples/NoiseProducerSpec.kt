@@ -18,9 +18,11 @@
  * #L%
  */
 package io.github.thestacktracewhisperer.mute.examples
+
 import io.github.thestacktracewhisperer.mute.Mute
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
+
 /**
  * Demonstrates @Mute with Kotest: the logger of [NoiseProducer] is silenced
  * for every test in this spec and fully restored afterward.

@@ -9,9 +9,9 @@ package io.github.thestacktracewhisperer.mute;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -43,29 +43,32 @@ import java.util.ServiceLoader;
  */
 public class MuteSpockExtension implements IAnnotationDrivenExtension<Mute> {
 
-    /** Public constructor required by Spock's annotation-driven extension mechanism. */
-    public MuteSpockExtension() {}
+  /**
+   * Public constructor required by Spock's annotation-driven extension mechanism.
+   */
+  public MuteSpockExtension() {
+  }
 
-    @Override
-    public void visitSpecAnnotation(Mute annotation, SpecInfo spec) {
-        List<LogMute> logMutes = loadLogMutes();
-        for (FeatureInfo feature : spec.getFeatures()) {
-            if (feature.getFeatureMethod().getReflection().getAnnotation(Mute.class) == null) {
-                feature.getFeatureMethod().addInterceptor(
-                        new MuteInterceptor(annotation.classes(), logMutes));
-            }
-        }
-    }
-
-    @Override
-    public void visitFeatureAnnotation(Mute annotation, FeatureInfo feature) {
+  @Override
+  public void visitSpecAnnotation(Mute annotation, SpecInfo spec) {
+    List<LogMute> logMutes = loadLogMutes();
+    for (FeatureInfo feature : spec.getFeatures()) {
+      if (feature.getFeatureMethod().getReflection().getAnnotation(Mute.class) == null) {
         feature.getFeatureMethod().addInterceptor(
-                new MuteInterceptor(annotation.classes(), loadLogMutes()));
+          new MuteInterceptor(annotation.classes(), logMutes));
+      }
     }
+  }
 
-    private static List<LogMute> loadLogMutes() {
-        List<LogMute> discovered = new ArrayList<>();
-        ServiceLoader.load(LogMute.class).forEach(discovered::add);
-        return Collections.unmodifiableList(discovered);
-    }
+  @Override
+  public void visitFeatureAnnotation(Mute annotation, FeatureInfo feature) {
+    feature.getFeatureMethod().addInterceptor(
+      new MuteInterceptor(annotation.classes(), loadLogMutes()));
+  }
+
+  private static List<LogMute> loadLogMutes() {
+    List<LogMute> discovered = new ArrayList<>();
+    ServiceLoader.load(LogMute.class).forEach(discovered::add);
+    return Collections.unmodifiableList(discovered);
+  }
 }

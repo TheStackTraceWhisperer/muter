@@ -2,25 +2,25 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+  <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>io.github.thestacktracewhisperer</groupId>
-        <artifactId>mute</artifactId>
-        <version>${revision}</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
+  <parent>
+    <groupId>io.github.thestacktracewhisperer</groupId>
+    <artifactId>mute</artifactId>
+    <version>${revision}</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
 
-    <artifactId>mute-testng</artifactId>
-    <packaging>pom</packaging>
+  <artifactId>mute-testng</artifactId>
+  <packaging>pom</packaging>
 
-    <name>mute-testng</name>
-    <description>Parent POM for the mute TestNG listener modules.</description>
+  <name>mute-testng</name>
+  <description>Parent POM for the mute TestNG listener modules.</description>
 
-    <modules>
-        <module>mute-testng-core</module>
-        <module>mute-testng-logback</module>
-        <module>mute-testng-log4j</module>
-        <module>mute-testng-jul</module>
-    </modules>
+  <modules>
+    <module>mute-testng-core</module>
+    <module>mute-testng-logback</module>
+    <module>mute-testng-log4j</module>
+    <module>mute-testng-jul</module>
+  </modules>
 </project>

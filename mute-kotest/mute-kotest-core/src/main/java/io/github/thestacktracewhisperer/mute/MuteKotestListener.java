@@ -9,9 +9,9 @@ package io.github.thestacktracewhisperer.mute;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,18 +21,14 @@ package io.github.thestacktracewhisperer.mute;
  */
 
 import io.kotest.core.annotation.AutoScan;
-import io.kotest.core.listeners.BeforeEachListener;
 import io.kotest.core.listeners.AfterEachListener;
+import io.kotest.core.listeners.BeforeEachListener;
 import io.kotest.core.test.TestCase;
 import io.kotest.core.test.TestResult;
 import kotlin.Unit;
 import kotlin.coroutines.Continuation;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.ServiceLoader;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -52,103 +48,105 @@ import java.util.concurrent.ConcurrentHashMap;
 @AutoScan
 public class MuteKotestListener implements BeforeEachListener, AfterEachListener {
 
-    private final List<LogMute> logMutes;
-    private final Map<Object, LogRestorer> restorerHolder = new ConcurrentHashMap<>();
+  private final List<LogMute> logMutes;
+  private final Map<Object, LogRestorer> restorerHolder = new ConcurrentHashMap<>();
 
-    @Override
-    public String getName() {
-        return "MuteKotestListener";
-    }
+  @Override
+  public String getName() {
+    return "MuteKotestListener";
+  }
 
-    /** Production constructor: discovers {@link LogMute} implementations via {@link ServiceLoader}. */
-    public MuteKotestListener() {
-        List<LogMute> discovered = new ArrayList<>();
-        ServiceLoader.load(LogMute.class).forEach(discovered::add);
-        this.logMutes = Collections.unmodifiableList(discovered);
-    }
+  /**
+   * Production constructor: discovers {@link LogMute} implementations via {@link ServiceLoader}.
+   */
+  public MuteKotestListener() {
+    List<LogMute> discovered = new ArrayList<>();
+    ServiceLoader.load(LogMute.class).forEach(discovered::add);
+    this.logMutes = Collections.unmodifiableList(discovered);
+  }
 
-    /**
-     * Testing seam that allows controlled {@link LogMute} injection in unit tests.
-     * Production use should rely on {@link #MuteKotestListener()}.
-     */
-    MuteKotestListener(List<LogMute> logMutes) {
-        this.logMutes = Collections.unmodifiableList(new ArrayList<>(logMutes));
-    }
+  /**
+   * Testing seam that allows controlled {@link LogMute} injection in unit tests.
+   * Production use should rely on {@link #MuteKotestListener()}.
+   */
+  MuteKotestListener(List<LogMute> logMutes) {
+    this.logMutes = Collections.unmodifiableList(new ArrayList<>(logMutes));
+  }
 
-    @Override
-    public Object beforeEach(TestCase testCase, Continuation<? super Unit> $completion) {
-        muteBefore(testCase, testCase.getSpec().getClass());
-        return Unit.INSTANCE;
-    }
+  @Override
+  public Object beforeEach(TestCase testCase, Continuation<? super Unit> $completion) {
+    muteBefore(testCase, testCase.getSpec().getClass());
+    return Unit.INSTANCE;
+  }
 
-    @Override
-    public Object afterEach(TestCase testCase, TestResult result, Continuation<? super Unit> $completion) {
-        restoreAfter(testCase);
-        return Unit.INSTANCE;
-    }
+  @Override
+  public Object afterEach(TestCase testCase, TestResult result, Continuation<? super Unit> $completion) {
+    restoreAfter(testCase);
+    return Unit.INSTANCE;
+  }
 
-    /**
-     * Mutes loggers if the given spec class is annotated with {@link Mute}.
-     * Package-private for testing.
-     *
-     * @deprecated Use {@link #muteBefore(Object, Class)} with an execution-context key.
-     */
-    @Deprecated(forRemoval = false)
-    void muteBefore(Class<?> specClass) {
-        muteBefore(Thread.currentThread(), specClass);
-    }
+  /**
+   * Mutes loggers if the given spec class is annotated with {@link Mute}.
+   * Package-private for testing.
+   *
+   * @deprecated Use {@link #muteBefore(Object, Class)} with an execution-context key.
+   */
+  @Deprecated(forRemoval = false)
+  void muteBefore(Class<?> specClass) {
+    muteBefore(Thread.currentThread(), specClass);
+  }
 
-    void muteBefore(Object executionKey, Class<?> specClass) {
-        Mute annotation = specClass.getAnnotation(Mute.class);
-        if (annotation == null) {
-            return;
-        }
-        if (logMutes.isEmpty()) {
-            throw new IllegalStateException(
-                    "No LogMute found on the classpath. "
-                    + "Add mute-kotest-logback, mute-kotest-log4j, or mute-kotest-jul "
-                    + "to your test dependencies.");
-        }
-        List<LogRestorer> restorers = new ArrayList<>(logMutes.size());
-        try {
-            for (LogMute mute : logMutes) {
-                restorers.add(mute.mute(annotation.classes()));
-            }
-        } catch (RuntimeException | Error e) {
-            for (int i = restorers.size() - 1; i >= 0; i--) {
-                restorers.get(i).restore();
-            }
-            throw e;
-        }
-        LogRestorer restorer = () -> {
-            for (int i = restorers.size() - 1; i >= 0; i--) {
-                restorers.get(i).restore();
-            }
-        };
-        restorerHolder.compute(executionKey, (key, previous) -> {
-            if (previous != null) {
-                previous.restore();
-            }
-            return restorer;
-        });
+  void muteBefore(Object executionKey, Class<?> specClass) {
+    Mute annotation = specClass.getAnnotation(Mute.class);
+    if (annotation == null) {
+      return;
     }
+    if (logMutes.isEmpty()) {
+      throw new IllegalStateException(
+        "No LogMute found on the classpath. "
+          + "Add mute-kotest-logback, mute-kotest-log4j, or mute-kotest-jul "
+          + "to your test dependencies.");
+    }
+    List<LogRestorer> restorers = new ArrayList<>(logMutes.size());
+    try {
+      for (LogMute mute : logMutes) {
+        restorers.add(mute.mute(annotation.classes()));
+      }
+    } catch (RuntimeException | Error e) {
+      for (int i = restorers.size() - 1; i >= 0; i--) {
+        restorers.get(i).restore();
+      }
+      throw e;
+    }
+    LogRestorer restorer = () -> {
+      for (int i = restorers.size() - 1; i >= 0; i--) {
+        restorers.get(i).restore();
+      }
+    };
+    restorerHolder.compute(executionKey, (key, previous) -> {
+      if (previous != null) {
+        previous.restore();
+      }
+      return restorer;
+    });
+  }
 
-    /**
-     * Restores loggers if a restorer is held for the given execution key.
-     * Package-private for testing.
-     *
-     * @deprecated Use {@link #restoreAfter(Object)} with an execution-context key.
-     */
-    @Deprecated(forRemoval = false)
-    void restoreAfter() {
-        restoreAfter(Thread.currentThread());
-    }
+  /**
+   * Restores loggers if a restorer is held for the given execution key.
+   * Package-private for testing.
+   *
+   * @deprecated Use {@link #restoreAfter(Object)} with an execution-context key.
+   */
+  @Deprecated(forRemoval = false)
+  void restoreAfter() {
+    restoreAfter(Thread.currentThread());
+  }
 
-    void restoreAfter(Object executionKey) {
-        LogRestorer restorer = restorerHolder.get(executionKey);
-        if (restorer != null) {
-            restorer.restore();
-            restorerHolder.remove(executionKey, restorer);
-        }
+  void restoreAfter(Object executionKey) {
+    LogRestorer restorer = restorerHolder.get(executionKey);
+    if (restorer != null) {
+      restorer.restore();
+      restorerHolder.remove(executionKey, restorer);
     }
+  }
 }

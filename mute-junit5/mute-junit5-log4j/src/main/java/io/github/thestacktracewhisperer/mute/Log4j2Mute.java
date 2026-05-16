@@ -9,9 +9,9 @@ package io.github.thestacktracewhisperer.mute;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -46,62 +46,64 @@ import java.util.function.Supplier;
  */
 public class Log4j2Mute implements LogMute {
 
-    private final Supplier<Object> loggerContextSupplier;
+  private final Supplier<Object> loggerContextSupplier;
 
-    /** Production constructor: resolves the context from {@link LogManager}. */
-    public Log4j2Mute() {
-        this(() -> LogManager.getContext(false));
-    }
+  /**
+   * Production constructor: resolves the context from {@link LogManager}.
+   */
+  public Log4j2Mute() {
+    this(() -> LogManager.getContext(false));
+  }
 
-    /**
-     * Testing seam that allows controlled logger-context injection in unit tests.
-     * Production use should rely on {@link #Log4j2Mute()}.
-     */
-    Log4j2Mute(Supplier<Object> loggerContextSupplier) {
-        this.loggerContextSupplier = loggerContextSupplier;
-    }
+  /**
+   * Testing seam that allows controlled logger-context injection in unit tests.
+   * Production use should rely on {@link #Log4j2Mute()}.
+   */
+  Log4j2Mute(Supplier<Object> loggerContextSupplier) {
+    this.loggerContextSupplier = loggerContextSupplier;
+  }
 
-    @Override
-    public LogRestorer mute(Class<?>[] targetClasses) {
-        LoggerContext ctx = getLoggerContext();
-        List<Runnable> restoreActions = new ArrayList<>();
+  @Override
+  public LogRestorer mute(Class<?>[] targetClasses) {
+    LoggerContext ctx = getLoggerContext();
+    List<Runnable> restoreActions = new ArrayList<>();
 
-        if (targetClasses.length == 0) {
-            org.apache.logging.log4j.core.Logger rootLogger =
-                    (org.apache.logging.log4j.core.Logger) LogManager.getRootLogger();
-            Level original = rootLogger.getLevel();
-            Configurator.setRootLevel(Level.OFF);
-            restoreActions.add(() -> Configurator.setRootLevel(original));
+    if (targetClasses.length == 0) {
+      org.apache.logging.log4j.core.Logger rootLogger =
+        (org.apache.logging.log4j.core.Logger) LogManager.getRootLogger();
+      Level original = rootLogger.getLevel();
+      Configurator.setRootLevel(Level.OFF);
+      restoreActions.add(() -> Configurator.setRootLevel(original));
+    } else {
+      for (Class<?> clazz : targetClasses) {
+        // Use the logger's own name: Log4j 2 replaces '$' with '.' for inner classes
+        org.apache.logging.log4j.core.Logger coreLogger =
+          (org.apache.logging.log4j.core.Logger) LogManager.getLogger(clazz);
+        String name = coreLogger.getName();
+        boolean hadExplicitConfig = ctx.getConfiguration().getLoggers().containsKey(name);
+        Level original = coreLogger.getLevel();
+        Configurator.setLevel(name, Level.OFF);
+        if (hadExplicitConfig) {
+          restoreActions.add(() -> Configurator.setLevel(name, original));
         } else {
-            for (Class<?> clazz : targetClasses) {
-                // Use the logger's own name: Log4j 2 replaces '$' with '.' for inner classes
-                org.apache.logging.log4j.core.Logger coreLogger =
-                        (org.apache.logging.log4j.core.Logger) LogManager.getLogger(clazz);
-                String name = coreLogger.getName();
-                boolean hadExplicitConfig = ctx.getConfiguration().getLoggers().containsKey(name);
-                Level original = coreLogger.getLevel();
-                Configurator.setLevel(name, Level.OFF);
-                if (hadExplicitConfig) {
-                    restoreActions.add(() -> Configurator.setLevel(name, original));
-                } else {
-                    restoreActions.add(() -> {
-                        ctx.getConfiguration().removeLogger(name);
-                        ctx.updateLoggers();
-                    });
-                }
-            }
+          restoreActions.add(() -> {
+            ctx.getConfiguration().removeLogger(name);
+            ctx.updateLoggers();
+          });
         }
-
-        return () -> restoreActions.forEach(Runnable::run);
+      }
     }
 
-    private LoggerContext getLoggerContext() {
-        Object ctx = loggerContextSupplier.get();
-        if (!(ctx instanceof LoggerContext loggerContext)) {
-            throw new IllegalStateException(
-                    "mute-log4j requires Log4j 2 Core on the classpath; found: "
-                            + (ctx == null ? "null" : ctx.getClass().getName()));
-        }
-        return loggerContext;
+    return () -> restoreActions.forEach(Runnable::run);
+  }
+
+  private LoggerContext getLoggerContext() {
+    Object ctx = loggerContextSupplier.get();
+    if (!(ctx instanceof LoggerContext loggerContext)) {
+      throw new IllegalStateException(
+        "mute-log4j requires Log4j 2 Core on the classpath; found: "
+          + (ctx == null ? "null" : ctx.getClass().getName()));
     }
+    return loggerContext;
+  }
 }

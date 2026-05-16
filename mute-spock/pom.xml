@@ -2,25 +2,25 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+  <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>io.github.thestacktracewhisperer</groupId>
-        <artifactId>mute</artifactId>
-        <version>${revision}</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
+  <parent>
+    <groupId>io.github.thestacktracewhisperer</groupId>
+    <artifactId>mute</artifactId>
+    <version>${revision}</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
 
-    <artifactId>mute-spock</artifactId>
-    <packaging>pom</packaging>
+  <artifactId>mute-spock</artifactId>
+  <packaging>pom</packaging>
 
-    <name>mute-spock</name>
-    <description>Parent POM for the mute Spock 2 extension modules.</description>
+  <name>mute-spock</name>
+  <description>Parent POM for the mute Spock 2 extension modules.</description>
 
-    <modules>
-        <module>mute-spock-core</module>
-        <module>mute-spock-logback</module>
-        <module>mute-spock-log4j</module>
-        <module>mute-spock-jul</module>
-    </modules>
+  <modules>
+    <module>mute-spock-core</module>
+    <module>mute-spock-logback</module>
+    <module>mute-spock-log4j</module>
+    <module>mute-spock-jul</module>
+  </modules>
 </project>

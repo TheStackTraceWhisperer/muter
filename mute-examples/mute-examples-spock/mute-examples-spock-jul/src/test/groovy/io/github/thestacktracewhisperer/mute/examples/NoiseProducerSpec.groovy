@@ -18,8 +18,10 @@
  * #L%
  */
 package io.github.thestacktracewhisperer.mute.examples
+
 import io.github.thestacktracewhisperer.mute.Mute
 import spock.lang.Specification
+
 /**
  * Demonstrates @Mute with Spock 2: the logger of {@link NoiseProducer} is silenced
  * for the duration of each annotated feature and fully restored afterward.

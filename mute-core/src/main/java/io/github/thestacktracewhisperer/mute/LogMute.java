@@ -9,9 +9,9 @@ package io.github.thestacktracewhisperer.mute;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,12 +31,12 @@ package io.github.thestacktracewhisperer.mute;
  * {@code META-INF/services/io.github.thestacktracewhisperer.mute.LogMute}.
  */
 public interface LogMute {
-    /**
-     * Mutes the loggers for the specified target classes.
-     *
-     * @param targetClasses the classes whose loggers should be muted; an empty array
-     *                      means mute the ROOT logger
-     * @return a command that restores all loggers to their pre-mute state
-     */
-    LogRestorer mute(Class<?>[] targetClasses);
+  /**
+   * Mutes the loggers for the specified target classes.
+   *
+   * @param targetClasses the classes whose loggers should be muted; an empty array
+   *                      means mute the ROOT logger
+   * @return a command that restores all loggers to their pre-mute state
+   */
+  LogRestorer mute(Class<?>[] targetClasses);
 }

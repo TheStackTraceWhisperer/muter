@@ -2,20 +2,20 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>io.github.thestacktracewhisperer</groupId>
-        <artifactId>mute-examples</artifactId>
-        <version>${revision}</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
-    <artifactId>mute-examples-testng</artifactId>
-    <packaging>pom</packaging>
-    <name>mute-examples-testng</name>
-    <description>Examples: Testng × each logging framework.</description>
-    <modules>
-        <module>mute-examples-testng-logback</module>
-        <module>mute-examples-testng-log4j</module>
-        <module>mute-examples-testng-jul</module>
-    </modules>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.github.thestacktracewhisperer</groupId>
+    <artifactId>mute-examples</artifactId>
+    <version>${revision}</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <artifactId>mute-examples-testng</artifactId>
+  <packaging>pom</packaging>
+  <name>mute-examples-testng</name>
+  <description>Examples: Testng × each logging framework.</description>
+  <modules>
+    <module>mute-examples-testng-logback</module>
+    <module>mute-examples-testng-log4j</module>
+    <module>mute-examples-testng-jul</module>
+  </modules>
 </project>
