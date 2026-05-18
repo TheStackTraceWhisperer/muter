@@ -83,11 +83,12 @@ public class PaymentServiceTest {
 
 ### Spock 2
 
-Annotate a feature method or a specification class. The annotation registers `MuteSpockExtension`
-automatically via `@ExtensionAnnotation`.
+Annotate a feature method or a specification class. `MuteSpockExtension` is registered automatically
+via the `IGlobalExtension` SPI — no additional configuration required.
 
 ```groovy
 // feature-level
+@Mute
 def "throws expected exception"() {
     when: service.doSomething(null)
     then: thrown IllegalArgumentException
