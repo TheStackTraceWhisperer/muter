@@ -73,14 +73,18 @@ public class MuteKotestListener implements BeforeEachListener, AfterEachListener
 
   @Override
   public Object beforeEach(TestCase testCase, Continuation<? super Unit> $completion) {
-    muteBefore(testCase, testCase.getSpec().getClass());
+    muteBefore(executionKey(testCase), testCase.getSpec().getClass());
     return Unit.INSTANCE;
   }
 
   @Override
   public Object afterEach(TestCase testCase, TestResult result, Continuation<? super Unit> $completion) {
-    restoreAfter(testCase);
+    restoreAfter(executionKey(testCase));
     return Unit.INSTANCE;
+  }
+
+  private static String executionKey(TestCase testCase) {
+    return testCase.getDescriptor().getId().getValue();
   }
 
   /**
